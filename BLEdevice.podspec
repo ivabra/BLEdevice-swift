@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   #  summary should be tweet-length, and the description more in depth.
   #
 
-  s.name         = "BLEdevice-swift"
+  s.name         = "BLEdevice"
   s.version      = "0.0.1"
   s.summary      = "Library that eases the way to interact with Bluetooth Low Energy devices."
 
@@ -25,6 +25,7 @@ Pod::Spec.new do |s|
   #   * Write the description between the DESC delimiters below.
   #   * Finally, don't worry about the indent, CocoaPods strips it!
   s.description  = <<-DESC
+                    Library that eases the way to interact with Bluetooth Low Energy devices.
                    DESC
 
   s.homepage     = "https://github.com/ivabra/BLEdevice-swift"
@@ -38,7 +39,7 @@ Pod::Spec.new do |s|
   #  Popular ones are 'MIT', 'BSD' and 'Apache License, Version 2.0'.
   #
 
-  s.license      = "MIT (example)"
+  s.license      = "MIT"
   # s.license      = { :type => "MIT", :file => "FILE_LICENSE" }
 
 
@@ -52,7 +53,7 @@ Pod::Spec.new do |s|
   #  profile URL.
   #
 
-  s.author             = { "Ivan Brazhnikov" => "email@address.com" }
+  s.author             = { "Ivan Brazhnikov" => "samsungpc239@gmail.com" }
   # Or just: s.author    = "Ivan Brazhnikov"
   # s.authors            = { "Ivan Brazhnikov" => "email@address.com" }
   # s.social_media_url   = "http://twitter.com/Ivan Brazhnikov"
@@ -64,7 +65,7 @@ Pod::Spec.new do |s|
   #
 
   # s.platform     = :ios
-  # s.platform     = :ios, "5.0"
+   s.platform     = :ios, "9.0"
 
   #  When using multiple platforms
   # s.ios.deployment_target = "5.0"
@@ -90,10 +91,10 @@ Pod::Spec.new do |s|
   #  Not including the public_header_files will make all headers public.
   #
 
-  s.source_files  = "Classes", "Classes/**/*.{h,m}"
+  s.source_files  = "BLEdevice", "Classes/**/*.{h,m,swift}"
   s.exclude_files = "Classes/Exclude"
 
-  # s.public_header_files = "Classes/**/*.h"
+  s.public_header_files = "BLEdevice/**/*.h"
 
 
   # ――― Resources ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
@@ -116,7 +117,7 @@ Pod::Spec.new do |s|
   #  the lib prefix of their name.
   #
 
-  # s.framework  = "SomeFramework"
+   s.framework  = "CoreBluetooth"
   # s.frameworks = "SomeFramework", "AnotherFramework"
 
   # s.library   = "iconv"

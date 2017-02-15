@@ -32,15 +32,11 @@ public protocol BLEdeviceCentralManager {
   
   var isScanning: Bool { get }
   
-  func restoreDevices(withIdentifiers: [UUID])
-  func retrieveDevices() -> [BLEdevice]
-  
-  func device(for uuid: UUID) -> BLEdevice?
+  func devices(for uuids: [UUID]) -> [BLEdevice]
   
   func connect(_ device: BLEdevice, options: [String : Any]?)
   func cancelDeviceConnection(_ device: BLEdevice)
   
-  func dropCachedDevices()
   
   func registerDeviceType(_ deviceType: BLEdevice.Type)
   func unregisterDeviceType(_ deviceType: BLEdevice.Type)
@@ -63,7 +59,8 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   
   var centralManager: CBCentralManager!
   var registeredTypes: [BLEdevice.Type] = []
-  var devices: [UUID: BLEdevice] = [:]
+  var peripheralToDeviceMap = NSMapTable<CBPeripheral, BLEdevice>.init(keyOptions: .weakMemory, valueOptions: .weakMemory)
+  
   
   weak var delegate: BLEdeviceCentralManagerDelegate?
 
@@ -135,30 +132,17 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
     return centralManager.isScanning
   }
   
+//  
+//  func retrieveDevices() -> [BLEdevice] {
+//    return Array(devices.values)
+//  }
   
-  func retrieveDevices() -> [BLEdevice] {
-    return Array(devices.values)
+  
+  func devices(for uuids: [UUID]) -> [BLEdevice] {
+    let ps = centralManager.retrievePeripherals(withIdentifiers: uuids)
+    let devices = ps.filter { self.type(for: $0) != nil }.map { self.findOrCreateDevice(for: $0) }
+    return devices
   }
-  
-  
-  func device(for uuid: UUID) -> BLEdevice? {
-    return devices[uuid]
-  }
-  
-  
-  func disconnectAll() {
-    devices.values.filter {
-      $0.connectionState == .connected || $0.connectionState == .connecting
-      }.forEach {
-        self.cancelDeviceConnection($0)
-    }
-  }
-  
-  func dropCachedDevices() {
-    disconnectAll()
-    devices.removeAll()
-  }
-  
   
   
   func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -168,7 +152,7 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   @discardableResult
   private func findOrCreateDevice(for peripheral: CBPeripheral) -> BLEdevice {
     let device: BLEdevice
-    if let _device = devices[peripheral.identifier]  {
+    if let _device = peripheralToDeviceMap.object(forKey: peripheral)  {
       device = _device
     } else {
       device = createAndAddDevice(from: peripheral)
@@ -181,20 +165,14 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   private func createAndAddDevice(from peripheral: CBPeripheral) -> BLEdevice {
     let type = self.type(for: peripheral)!
     let instance = type.init(peripheral: peripheral)
-    
-    devices[peripheral.identifier] = instance
+    self.peripheralToDeviceMap.setObject(instance, forKey: peripheral)
     return instance
   }
   
-  func restoreDevices(withIdentifiers identifiers: [UUID]) {
-    let peripherals = centralManager.retrievePeripherals(withIdentifiers: identifiers)
-    for p in peripherals {
-      findOrCreateDevice(for: p)
-    }
-  }
  
   func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-    
+    debugPrint("Discovered device: ", peripheral)
+
     guard type(for: peripheral) != nil else {
       return
     }

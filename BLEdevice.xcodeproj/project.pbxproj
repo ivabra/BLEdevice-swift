@@ -504,6 +504,7 @@
 				9F5A607F1E464BF500F03D1D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		9F5A60A91E46BE9200F03D1D /* Build configuration list for PBXNativeTarget "BLEdevice-Sample" */ = {
 			isa = XCConfigurationList;
@@ -512,6 +513,7 @@
 				9F5A60AB1E46BE9200F03D1D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

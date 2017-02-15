@@ -68,6 +68,16 @@ extension BLEdeviceConfiguration {
     self.init(serviceDescriptions: [serviceDescription])
   }
   
+  @nonobjc
+  public convenience init(object: [String : [String : (type: CBCharacteristicWriteType?, notify: Bool)]]) {
+    let services = object.map { serviceUUID, characteristicInfo -> ServiceDescription in
+      let characteristics = characteristicInfo.map { uuid, info in
+        CharacterisicDescription(uuid: CBUUID(string: uuid), writeType: info.type, notify: info.notify)
+      }
+      return ServiceDescription(serviceUUID: CBUUID(string: serviceUUID), characteristics: characteristics)
+    }
+    self.init(serviceDescriptions: services)
+  }
   
   public func characteristicDescription(for uuid: CBUUID) -> CharacterisicDescription {
     if let characteristic = _characteristicMap[uuid] {
@@ -110,7 +120,7 @@ public struct CharacterisicDescription {
   public init(uuid: CBUUID, writeType: CBCharacteristicWriteType? = nil, notify: Bool = false) {
     self.uuid = uuid
     self.writeType = writeType
-    self.notify = false
+    self.notify = notify
   }
   
 }

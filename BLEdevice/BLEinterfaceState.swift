@@ -11,6 +11,7 @@ import Foundation
 @objc
 public enum BLEinterfaceState: Int {
   case initial
+  case preparing
   case free
   case waitingResponses
 }

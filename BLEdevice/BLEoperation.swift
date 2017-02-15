@@ -12,41 +12,46 @@ import CoreBluetooth
 public protocol BLEoperation: class {
   
   var name: BLEoperationName { get }
-  var targetCharacteristicUUID: CBUUID { get }
+  var requestCharacteristicUUID: CBUUID! { get set }
+  var responseCharacteristicUUID: CBUUID! { get set }
   
   var timeIntervalForNextOperation: TimeInterval? { get }
-  var error: Error? { get }
-  var result: Any? { get }
+  var error: Error? { get } 
   var userInfo: [String : Any] { get set }
   
   var sendingData: Data { get }
   
-  init(name: BLEoperationName, targetUUID: CBUUID)
+  init(name: BLEoperationName)
   
   func didReceiveData(_ data: Data)
   func didReceiveError(_ error: Error)
   func didComplete()
+  
+  func validateThisOperationIsDestination(for data: Data) -> Bool
 }
 
 open class BLEbaseOperation: BLEoperation {
   
   public let name: BLEoperationName
-  public let targetCharacteristicUUID: CBUUID
+  public var requestCharacteristicUUID: CBUUID!
+  public var responseCharacteristicUUID: CBUUID!
   
-  public var timeIntervalForNextOperation: TimeInterval?
+  open var timeIntervalForNextOperation: TimeInterval?
   
   open var error: Error?
-  open var result: Any?
   open var userInfo: [String : Any]
   
   open var sendingData: Data {
     return .init()
   }
   
-  required public init(name: BLEoperationName, targetUUID: CBUUID) {
+  required public init(name: BLEoperationName) {
     self.name = name
-    self.targetCharacteristicUUID = targetUUID
     self.userInfo = [:]
+  }
+  
+  open func validateThisOperationIsDestination(for data: Data) -> Bool {
+    fatalError("Method not implemented yet")
   }
   
   open func didReceiveData(_ data: Data) {

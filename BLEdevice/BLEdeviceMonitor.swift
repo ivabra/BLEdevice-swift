@@ -64,12 +64,17 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   
   @discardableResult
   func scan() -> Bool {
-    if scan_discoverService() && scan_discoverCharacteristics() && scan_subscribeOnCharacteristic() {
-      return true
-    }
-    return false
+    return executeNextScanPass()
   }
   
+  @discardableResult
+  func executeNextScanPass() -> Bool {
+    if scan_discoverService() && scan_discoverCharacteristics() && scan_subscribeOnCharacteristic() {
+      delegate?.peripheralMonitor(monitor: self, didEndScanning: nil)
+      return false
+    }
+    return true
+  }
   
   var isPrepared: Bool {
     return isCharacteristicsSubscribed
@@ -284,10 +289,8 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
       delegate?.peripheralMonitor(monitor: self, didEndScanning: error)
       return
     }
-    
-    if scan_discoverService() {
-      scan_discoverCharacteristics()
-    }
+  
+    executeNextScanPass()
     
   }
   
@@ -302,10 +305,7 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
       return
     }
     
-    
-    if scan_discoverCharacteristics() {
-      scan_subscribeOnCharacteristic()
-    }
+    executeNextScanPass()
     
   }
   
@@ -318,9 +318,7 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
       return
     }
     
-    if scan_subscribeOnCharacteristic() {
-      delegate?.peripheralMonitor(monitor: self, didEndScanning: nil)
-    }
+    executeNextScanPass()
     
   }
   
