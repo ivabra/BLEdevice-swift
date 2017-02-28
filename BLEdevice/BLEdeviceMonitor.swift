@@ -140,7 +140,7 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   func send(data: Data, characteristicUUID uuid: CBUUID) throws {
     // FATAL ERROR if not presented in config
     let description = config.characteristicDescription(for: uuid)
-    // THROW error if not discovered
+    // THROW ERROR if not discovered
     let characteristic = try discoveredCharacteristic(for: uuid)
     // FATAL ERROR if not presented
     guard let writeType = description.writeType else {

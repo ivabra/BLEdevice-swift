@@ -6,7 +6,7 @@
 //  Copyright © 2017 Ivan Brazhnikov. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
 //! Project version number for BLEdevice.
 FOUNDATION_EXPORT double BLEdeviceVersionNumber;

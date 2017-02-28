@@ -13,6 +13,7 @@ import CoreBluetooth
 @objc
 public class BLEdeviceConfiguration: NSObject {
   
+  public let primaryServiceUUID: CBUUID
   public let serviceDescriptions: [ServiceDescription]
   
   
@@ -23,7 +24,9 @@ public class BLEdeviceConfiguration: NSObject {
   
   public init(serviceDescriptions: [ServiceDescription]) {
     
+    assert(serviceDescriptions.isEmpty == false, "Should be at least one description")
     
+    primaryServiceUUID = serviceDescriptions.first!.serviceUUID
     /* Initialize services map */
     var serviceMap = [CBUUID: ServiceDescription]()
     for s in serviceDescriptions {

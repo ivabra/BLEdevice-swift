@@ -33,6 +33,7 @@ public protocol BLEdeviceCentralManager {
   var isScanning: Bool { get }
   
   func devices(for uuids: [UUID]) -> [BLEdevice]
+  func connectedDevices(withTypes: [BLEdevice.Type]) -> [BLEdevice]
   
   func connect(_ device: BLEdevice, options: [String : Any]?)
   func cancelDeviceConnection(_ device: BLEdevice)
@@ -68,7 +69,11 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   init(queue: DispatchQueue, restoreIdentifier: String? = nil) {
     super.init()
     var options = [String : Any]()
-    options[CBCentralManagerOptionRestoreIdentifierKey] = restoreIdentifier
+    #if TARGET_OS_IOS
+      options[CBCentralManagerOptionRestoreIdentifierKey] = restoreIdentifier
+    #else
+     
+    #endif
     self.centralManager = CBCentralManager(delegate: self, queue: queue, options: options)
   }
   
@@ -110,10 +115,18 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   
   
   func scanForDevices(options: [String : Any]?) {
+    #if TARGET_OS_IOS
+    #else
+      self.isScanning = true
+    #endif
     centralManager.scanForPeripherals(withServices: nil, options: options)
   }
   
   func stopScan() {
+    #if TARGET_OS_IOS
+    #else
+      self.isScanning = false
+    #endif
     centralManager.stopScan()
   }
   
@@ -128,14 +141,18 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   }
   
   
+  #if TARGET_OS_IOS
   var isScanning : Bool {
     return centralManager.isScanning
   }
+  #else
   
-//  
-//  func retrieveDevices() -> [BLEdevice] {
-//    return Array(devices.values)
-//  }
+  
+  var isScanning: Bool = false
+  
+  #endif
+  
+
   
   
   func devices(for uuids: [UUID]) -> [BLEdevice] {
@@ -145,9 +162,19 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   }
   
   
+  func connectedDevices(withTypes types: [BLEdevice.Type]) -> [BLEdevice] {
+    let uuids = types.map { $0.primaryServiceUUID() }
+    let peripherals = centralManager.retrieveConnectedPeripherals(withServices: uuids)
+    let devices = peripherals.map { findOrCreateDevice(for: $0) }
+    return devices
+  }
+  
+  
   func centralManagerDidUpdateState(_ central: CBCentralManager) {
     delegate?.bleDeviceManagerDidUpdateState?(self)
   }
+  
+  
   
   @discardableResult
   private func findOrCreateDevice(for peripheral: CBPeripheral) -> BLEdevice {
@@ -171,14 +198,12 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   
  
   func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-    debugPrint("Discovered device: ", peripheral)
-
+    
     guard type(for: peripheral) != nil else {
       return
     }
     
     let device = findOrCreateDevice(for: peripheral)
-    debugPrint("Peripheral ", peripheral, " was found")
     delegate?.bleDeviceManager?(self, didDiscoverDevice: device, rssi: RSSI)
   }
   
@@ -202,7 +227,13 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   
   func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
     var restored: [BLEdevice] = []
-    if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
+    #if TARGET_OS_IOS
+     let key = CBCentralManagerRestoredStatePeripheralsKey
+    #else
+     let key = "CBCentralManagerRestoredStatePeripheralsKey"
+    #endif
+    
+    if let peripherals = dict[key] as? [CBPeripheral] {
       for peripheral in peripherals where type(for: peripheral) != nil {
         let device = findOrCreateDevice(for: peripheral)
         restored.append(device)

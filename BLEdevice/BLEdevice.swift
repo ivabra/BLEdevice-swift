@@ -31,6 +31,7 @@ public enum BLEdeviceError : Error {
   
   static func validatePeripheral(_ peripheral: CBPeripheral) -> Bool
   static func defaultConfiguration() -> BLEdeviceConfiguration
+  static func primaryServiceUUID() -> CBUUID
   
   init(peripheral: CBPeripheral)
   
@@ -47,6 +48,8 @@ public enum BLEdeviceError : Error {
   func didConnect()
   func didDisconnect(error: Error?)
   func didFailToConnect(error: Error?)
+  
+  func waitCurrentOperation() throws
   
 }
 

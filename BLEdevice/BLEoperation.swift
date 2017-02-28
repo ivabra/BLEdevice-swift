@@ -15,7 +15,9 @@ public protocol BLEoperation: class {
   var requestCharacteristicUUID: CBUUID! { get set }
   var responseCharacteristicUUID: CBUUID! { get set }
   
-  var timeIntervalForNextOperation: TimeInterval? { get }
+  var awaitingTimeInterval: TimeInterval! { get set }
+  var requiredSeveralResponses: Bool { get }
+  
   var error: Error? { get } 
   var userInfo: [String : Any] { get set }
   
@@ -36,7 +38,11 @@ open class BLEbaseOperation: BLEoperation {
   public var requestCharacteristicUUID: CBUUID!
   public var responseCharacteristicUUID: CBUUID!
   
-  open var timeIntervalForNextOperation: TimeInterval?
+  open var awaitingTimeInterval: TimeInterval!
+  
+  public var requiredSeveralResponses: Bool {
+    return false
+  }
   
   open var error: Error?
   open var userInfo: [String : Any]
@@ -59,7 +65,9 @@ open class BLEbaseOperation: BLEoperation {
   }
   
   open func didReceiveError(_ error: Error) {
-    
+    if self.error == nil {
+      self.error = error
+    }
   }
   
   open func didComplete() {

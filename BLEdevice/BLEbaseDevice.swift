@@ -12,10 +12,16 @@ import CoreBluetooth
 @objc
 open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
-  
+  open class func primaryServiceUUID() -> CBUUID {
+    fatalError()
+  }
   
   
   let monitor: PeripheralMonitor
+  var sem: DispatchSemaphore?
+  var waitCount: Int = 0
+  
+  open var defaultOperationAwaitingTimeInterval: TimeInterval = 3.0
   
   /* Current state */
   
@@ -91,11 +97,25 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
+  private var syncOperationError: Error? {
+    get {
+      return internalUserInfo.getValue(for: "__syncOperationError") as? Error
+    }
+    set {
+      internalUserInfo.putValue(newValue, for: "__syncOperationError")
+    }
+  }
   
-  /* Delegates */
+  private var syncOperationResult: Any? {
+    get {
+      return internalUserInfo.getValue(for: "__syncOperationResult")
+    }
+    set {
+      internalUserInfo.putValue(newValue, for: "__syncOperationResult")
+    }
+  }
   
   public weak  var delegate: BLEdeviceDelegate?
-  
   
   
   
@@ -156,22 +176,27 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     return monitor.isPrepared
   }
   
+  
   open var defaultOperationRequestUUID: CBUUID? {
     return nil
   }
   
+  
   open var defaultOperationResponseUUID: CBUUID? {
     return nil
   }
+  
   
   public func prepare() {
     setInterfaceStateAndNotifyDelegate(.preparing)
     monitor.scan()
   }
   
+  
   func characteristicUUID(for operation: BLEoperation) -> CBUUID {
     fatalError()
   }
+  
   
   func setInterfaceStateAndNotifyDelegate(_ state: BLEinterfaceState) {
     interfaceState = state
@@ -214,27 +239,83 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     
     willExecuteOperation(operation)
     
+    if operation.awaitingTimeInterval == nil {
+      operation.awaitingTimeInterval = defaultOperationAwaitingTimeInterval
+    }
+    
     let data = operation.sendingData
     let uuid: CBUUID! = operation.requestCharacteristicUUID
     assert(uuid != nil, "Target UUID should not be nil")
     
     do {
         try send(data: data, forCharacteristicUUID: uuid)
+        waitForNextOperationIteration(waitingTime: operation.awaitingTimeInterval)
     } catch {
-        dropInOperationState()
+        finishCurrentOperation()
       throw error
     }
+  }
+  
+  
+  public final func waitCurrentOperation() throws  {
    
+    guard currentOperation != nil else {
+      return
+    }
+    
+    
+    let semaphore: DispatchSemaphore = {
+      if let sem = self.sem {
+        return sem
+      } else {
+        self.waitCount = 0
+        return DispatchSemaphore(value: 0)
+      }
+    }()
+    
+    self.waitCount += 1
+    semaphore.wait()
+    
+    if let error = syncOperationError {
+      syncOperationError = nil
+      throw error
+    }
   }
   
   
   
-  private func dropInOperationState() {
+  
+  
+  private func signalAndDropSemaphore() {
+    if let sem = sem {
+      let waitCount = self.waitCount
+      
+      self.sem = nil
+      self.waitCount = 0
+      
+      for _ in 0..<waitCount {
+         sem.signal()
+      }
+     
+    }
+  }
+  
+  
+  
+  
+  private func finishCurrentOperation() {
+   
+    defer {
+      signalAndDropSemaphore()
+    }
+    
     guard let currentOperation = currentOperation else {
       return
     }
+    
     self.currentOperation = nil
     currentOperation.didComplete()
+    syncOperationError = currentOperation.error
     didEndOperation(currentOperation)
     setInterfaceStateAndNotifyDelegate(.free)
   }
@@ -246,7 +327,8 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   final func waitForNextOperationIteration(waitingTime: TimeInterval){
     
-    let current = self.currentOperation
+    weak var current = self.currentOperation
+    
     interfaceQueue.asyncAfter(deadline: .now() + waitingTime) {[weak self] in
       guard let `self` = self else { return }
       
@@ -254,7 +336,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
         return
       }
       
-      self.dropInOperationState()
+      self.finishCurrentOperation()
     }
     
   }
@@ -288,7 +370,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     } catch {
       if let operation = self.currentOperation {
         operation.didReceiveError(error)
-        dropInOperationState()
+        finishCurrentOperation()
       }
       return
     }
@@ -309,12 +391,12 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     
     defer {
       if operation.error != nil {
-        dropInOperationState()
+        finishCurrentOperation()
       } else {
-        if let waitingTime = operation.timeIntervalForNextOperation {
-          waitForNextOperationIteration(waitingTime: waitingTime)
+        if operation.requiredSeveralResponses {
+          waitForNextOperationIteration(waitingTime: operation.awaitingTimeInterval)
         } else {
-          dropInOperationState()
+          finishCurrentOperation()
         }
       }
     }
