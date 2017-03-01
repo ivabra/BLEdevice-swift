@@ -9,6 +9,7 @@
 import Foundation
 import CoreBluetooth
 
+/*
 public protocol BLEoperation: class {
   
   var name: BLEoperationName { get }
@@ -31,6 +32,8 @@ public protocol BLEoperation: class {
   
   func validateThisOperationIsDestination(for data: Data) -> Bool
 }
+
+
 
 open class BLEbaseOperation: BLEoperation {
   
@@ -75,3 +78,92 @@ open class BLEbaseOperation: BLEoperation {
   }
   
 }
+*/
+
+public enum BLEOperationError: Error {
+  case interrupted
+}
+
+
+@objc public protocol BLEOperation: class {
+  var name: String { get }
+  var error: Error? { get }
+  var userInfo: [String : Any] { get }
+  var executionTimestamp: TimeInterval { get }
+  
+  func canRespondOnCharacteristic(characteristicUUID: CBUUID) -> Bool
+  func canRespondOnData(data: Data) -> Bool
+  
+  var responseTimeout: TimeInterval { get }
+  var hasNextIteration: Bool { get }
+  
+  
+  func main(interactor: PeripheralInteractor) throws
+  
+  func didUpdateValue(_ data: Data, forCharacteristicUUID uuid: CBUUID, error: Error?)
+  func didWriteValue(forCharacteristicUUID uuid: CBUUID, error: Error?)
+  func didReceiveExternalError(_ error: Error)
+  
+  func timeout()
+}
+
+
+
+
+open class BLEBaseOperation: BLEOperation {
+  
+  
+  private var executedOnce: Bool = false
+  public let name: String
+  
+  public init(name: String) {
+    self.name = name
+  }
+  
+  public var error: Error?
+  public var userInfo: [String : Any] = [:]
+  public var allowedResponseCharacteristicUUIDs: Set<CBUUID> = []
+  
+  public var responseTimeout: TimeInterval = 3.0
+  public var executionTimestamp: TimeInterval = Date().timeIntervalSinceReferenceDate
+  
+  open var hasNextIteration: Bool {
+    return executedOnce == false
+  }
+  
+  
+  open func canRespondOnCharacteristic(characteristicUUID: CBUUID) -> Bool {
+    return allowedResponseCharacteristicUUIDs.contains(characteristicUUID)
+  }
+  
+  open func canRespondOnData(data: Data) -> Bool {
+    return true
+  }
+  
+  func updateExecutionTimestamp() {
+    self.executionTimestamp = Date.timeIntervalSinceReferenceDate
+  }
+  
+  open func main(interactor: PeripheralInteractor) throws {
+    self.executedOnce = true
+    updateExecutionTimestamp()
+  }
+  
+  open func didUpdateValue(_ data: Data, forCharacteristicUUID uuid: CBUUID, error: Error?) {
+    
+  }
+  
+  open func didWriteValue(forCharacteristicUUID uuid: CBUUID, error: Error?) {
+    
+  } 
+  
+  open func timeout() {
+    
+  }
+  
+  open func didReceiveExternalError(_ error: Error) {
+    self.error = error
+  }
+  
+}
+

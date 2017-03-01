@@ -10,11 +10,20 @@ import Foundation
 import CoreBluetooth
 
 @objc public protocol BLEdeviceDelegate: class {
+  
+  @objc optional func bleDevice(_ device: BLEdevice, willSendData data: Data, toCharateristic characteristicUUID: CBUUID)
+  @objc optional func bleDevice(_ device: BLEdevice, didSendData data: Data, toCharateristic characteristicUUID: CBUUID)
+  
+  @objc optional func bleDevice(_ device: BLEdevice, willExecuteOperation operation: BLEOperation)
+  @objc optional func bleDevice(_ device: BLEdevice, didFinishOperation operation: BLEOperation)
+  
   @objc optional func bleDeviceDidConnect(_ device: BLEdevice)
   @objc optional func bleDevice(_ device:BLEdevice, didDisconnect error: Error?)
   @objc optional func bleDevice(_ device: BLEdevice, didFailToConnect error: Error?)
   @objc optional func bleDeviceDidChangeInterfaceState(_ device: BLEdevice)
   @objc optional func bleDevice(_ device: BLEdevice, didEndInitializing error: Error?)
+  @objc optional func bleDevice(_ device: BLEdevice, didWriteValueForCharacteristicUUID uuid: CBUUID, error: Error?)
+  @objc optional func bleDevice(_ device: BLEdevice, didUpdateValueForCharacteristicUUID uuid: CBUUID, error: Error?)
 }
 
 
@@ -42,6 +51,7 @@ public enum BLEdeviceError : Error {
   var name: String? { get }
   
   func prepare()
+  var isPrepared: Bool { get }
   
   func getPeripheral() throws -> CBPeripheral
   
@@ -49,7 +59,12 @@ public enum BLEdeviceError : Error {
   func didDisconnect(error: Error?)
   func didFailToConnect(error: Error?)
   
-  func waitCurrentOperation() throws
-  
+  func charateristicValue(forUUID uuid: CBUUID) -> Data?
+  func readCharateristicValue(forUUID uuid: CBUUID) throws
+  func send(data: Data, forCharacteristicUUID uuid: CBUUID) throws
+
+  func executeOperation(_ operation: BLEOperation) throws
+  var currentOperation: BLEOperation? { get }
+  func dropCurrentOperaton()
 }
 

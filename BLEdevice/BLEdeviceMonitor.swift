@@ -13,7 +13,7 @@ import CoreBluetooth
 
 
 
-protocol PeripheralMonitorDelegate: class { 
+@objc public protocol PeripheralMonitorDelegate: class {
   func peripheralMonitor(monitor: PeripheralMonitor, didEndScanning error: Error?)
   func peripheralMonitor(monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?)
   func peripheralMonitor(monitor: PeripheralMonitor, didWriteValueForCharacteristic uuid: CBUUID, error: Error?)
@@ -24,7 +24,17 @@ func PeripheralMonitorCreate(peripheral: CBPeripheral, configuration: BLEdeviceC
 }
 
 
-protocol PeripheralMonitor: class {
+@objc
+public protocol PeripheralInteractor {
+  func send(data: Data, characteristicUUID uuid: CBUUID) throws
+  func readValue(forCharacteristicUUID uuid: CBUUID) throws
+  func retrieveCachedData(forCharacteristicUUID uuid: CBUUID) -> Data?
+  func retrieveData(forCharacteristicUUID uuid: CBUUID) -> Data?
+}
+
+@objc
+public protocol PeripheralMonitor: class, PeripheralInteractor {
+ 
   init(peripheral: CBPeripheral, configuration: BLEdeviceConfiguration)
   
   @discardableResult
@@ -34,12 +44,8 @@ protocol PeripheralMonitor: class {
   
   var isPrepared : Bool { get }
   var peripheral: CBPeripheral { get }
-  func send(data: Data, characteristicUUID uuid: CBUUID) throws
-  func readValue(forCharacteristicUUID uuid: CBUUID) throws
   func dropCache()
   
-  func retrieveCachedData(forCharacteristicUUID uuid: CBUUID) -> Data?
-  func retrieveData(forCharacteristicUUID uuid: CBUUID) throws -> Data?
 }
 
 
@@ -69,7 +75,9 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   
   @discardableResult
   func executeNextScanPass() -> Bool {
-    if scan_discoverService() && scan_discoverCharacteristics() && scan_subscribeOnCharacteristic() {
+    if scan_discoverService()
+      && scan_discoverCharacteristics()
+      && scan_subscribeOnCharacteristic() {
       delegate?.peripheralMonitor(monitor: self, didEndScanning: nil)
       return false
     }
@@ -83,13 +91,16 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   
   
   private func discoveredServices(for uuids: Set<CBUUID>) throws -> [CBService] {
-    if let services = peripheral.services, nil == services.index(where: {uuids.contains($0.uuid) == false}) {
-      let set = Set(services.map { $0.uuid })
-      if uuids.isSubset(of: set) {
-        return services.filter({uuids.contains($0.uuid)})
-      }
+    
+    let existingServices = Set(peripheral.services?.map { $0.uuid } ?? [])
+    
+    guard uuids.isSubset(of: existingServices) else {
+      throw BLEerror.serviceNotDiscovered
     }
-    throw BLEerror.serviceNotDiscovered
+    
+    let services = peripheral.services?.filter {uuids.contains($0.uuid)} ?? []
+    return services
+    
   }
   
   
@@ -109,7 +120,6 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   
   private func discoveredCharacteristics(for uuids: Set<CBUUID>, serviceUUID: CBUUID) throws -> [CBCharacteristic] {
     let service = try discoveredService(for: serviceUUID)
-    
     if let chs = service.characteristics {
       let set = Set(chs.map({$0.uuid}))
       if uuids.isSubset(of: set) {
@@ -218,7 +228,7 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
       return true
     } catch {}
   
-    peripheral.discoverServices(uuids)
+    peripheral.discoverServices(nil)
     return false
   }
   
@@ -236,7 +246,7 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
       do {
          let _ = try discoveredCharacteristics(for: Set(characteristicsUUID), serviceUUID: service.uuid)
       } catch {
-        peripheral.discoverCharacteristics(characteristicsUUID, for: service)
+        peripheral.discoverCharacteristics(nil, for: service)
         return false
       }
       
@@ -277,8 +287,12 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
     return characteristicReceivedDataCache[uuid]
   }
   
-  func retrieveData(forCharacteristicUUID uuid: CBUUID) throws -> Data? {
-    return try discoveredCharacteristic(for: uuid).value
+  func retrieveData(forCharacteristicUUID uuid: CBUUID) -> Data? {
+    do {
+      return try discoveredCharacteristic(for: uuid).value
+    } catch {
+      return nil
+    }
   }
   
   
@@ -336,7 +350,5 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
     delegate?.peripheralMonitor(monitor: self, didWriteValueForCharacteristic: characteristic.uuid, error: error)
   }
-  
-  
   
 }

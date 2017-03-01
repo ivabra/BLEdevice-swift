@@ -17,17 +17,19 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
+  public weak var delegate: BLEdeviceDelegate?
+  
   let monitor: PeripheralMonitor
-  var sem: DispatchSemaphore?
   var waitCount: Int = 0
   
-  open var defaultOperationAwaitingTimeInterval: TimeInterval = 3.0
+ // open var defaultOperationAwaitingTimeInterval: TimeInterval = 3.0
   
-  /* Current state */
+  /* State */
   
-  public var currentOperation: BLEoperation?
+  public var currentOperation: BLEOperation?
   
-  public private(set) var interfaceState: BLEinterfaceState = .initial
+  public
+  private(set) var interfaceState: BLEinterfaceState = .initial
   
   public let userInfo: BLEdeviceUserInfo = .init()
   
@@ -38,43 +40,14 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   let internalUserInfo: BLEdeviceUserInfo = .init()
   
   
-  
-  
-  
-  
   open class func defaultConfiguration() -> BLEdeviceConfiguration {
     return .empty
   }
 
   
   open class func validatePeripheral(_ peripheral: CBPeripheral) -> Bool {
-    return false
+    fatalError()
   }
-  
-  
-  open func willSendData(data: Data, forCharacteristicUUID: CBUUID) {
-    
-  }
-  
-  open func didSendData(data: Data, forCharacteristicUUID: CBUUID) {
-    
-  }
-  
-  open func didReceiveInPassiveMode(data: Data, fromCharacteristicWithUUID uuid: CBUUID) {
-    /* When it's no operation, but data was received */
-  }
-  
-  open func didUpdateValueForCharacteristic(uuid: CBUUID, error: Error?) {
-    
-  }
-  
-  open func didWriteValueForCharacteristic(uuid: CBUUID, error: Error?) {
-    
-  }
-  
-  
-  
-  
   
   
   
@@ -97,32 +70,11 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  private var syncOperationError: Error? {
-    get {
-      return internalUserInfo.getValue(for: "__syncOperationError") as? Error
-    }
-    set {
-      internalUserInfo.putValue(newValue, for: "__syncOperationError")
-    }
-  }
-  
-  private var syncOperationResult: Any? {
-    get {
-      return internalUserInfo.getValue(for: "__syncOperationResult")
-    }
-    set {
-      internalUserInfo.putValue(newValue, for: "__syncOperationResult")
-    }
-  }
-  
-  public weak  var delegate: BLEdeviceDelegate?
-  
-  
-  
   required convenience public init(peripheral: CBPeripheral) {
     let config = type(of: self).defaultConfiguration()
     self.init(peripheral: peripheral, config: config)
   }
+  
   
   public init(peripheral: CBPeripheral, config: BLEdeviceConfiguration) {
     let monitor = PeripheralMonitorCreate(peripheral: peripheral, configuration: config)
@@ -156,9 +108,11 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  func trySetCurrentOperation(_ operation: BLEoperation) throws {
+  
+  func trySetCurrentOperation(_ operation: BLEOperation) throws {
     try assertInteractionState()
     currentOperation = operation
+    setInterfaceStateAndNotifyDelegate(.busy)
   }
   
   
@@ -172,7 +126,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  var isPrepared: Bool {
+  open var isPrepared: Bool {
     return monitor.isPrepared
   }
   
@@ -193,7 +147,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  func characteristicUUID(for operation: BLEoperation) -> CBUUID {
+  func characteristicUUID(for operation: BLEOperation) -> CBUUID {
     fatalError()
   }
   
@@ -213,110 +167,67 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   
   public func send(data: Data, forCharacteristicUUID uuid: CBUUID) throws {
-    willSendData(data: data, forCharacteristicUUID: uuid)
+    delegate?.bleDevice?(self, willSendData: data, toCharateristic: uuid)
     try monitor.send(data: data, characteristicUUID: uuid)
-    didSendData(data: data, forCharacteristicUUID: uuid)
+    delegate?.bleDevice?(self, didSendData: data, toCharateristic: uuid)
+  }
+ 
+  
+  public func readCharateristicValue(forUUID uuid: CBUUID) throws {
+    try monitor.readValue(forCharacteristicUUID: uuid)
   }
   
-  
-  
-  
-  open func willExecuteOperation(_ operation: BLEoperation) {
-    if operation.requestCharacteristicUUID == nil {
-      operation.requestCharacteristicUUID = defaultOperationRequestUUID
-    }
-    if operation.responseCharacteristicUUID == nil {
-      operation.responseCharacteristicUUID = defaultOperationResponseUUID
-    }
+  public func charateristicValue(forUUID uuid: CBUUID) -> Data? {
+    return monitor.retrieveData(forCharacteristicUUID: uuid)
   }
   
-  
-  
-  
-  public func execute(operation: BLEoperation) throws {
-    
+  public func executeOperation(_ operation: BLEOperation) throws {
     try trySetCurrentOperation(operation)
-    
-    willExecuteOperation(operation)
-    
-    if operation.awaitingTimeInterval == nil {
-      operation.awaitingTimeInterval = defaultOperationAwaitingTimeInterval
-    }
-    
-    let data = operation.sendingData
-    let uuid: CBUUID! = operation.requestCharacteristicUUID
-    assert(uuid != nil, "Target UUID should not be nil")
-    
-    do {
-        try send(data: data, forCharacteristicUUID: uuid)
-        waitForNextOperationIteration(waitingTime: operation.awaitingTimeInterval)
-    } catch {
-        finishCurrentOperation()
-      throw error
-    }
+    delegate?.bleDevice?(self, willExecuteOperation: operation)
+    executeNextCurrentOperationIteration()
   }
   
   
-  public final func waitCurrentOperation() throws  {
-   
-    guard currentOperation != nil else {
+  
+  
+  private func executeNextCurrentOperationIteration() {
+ 
+    guard let operation = self.currentOperation else {
+      fatalError()
+    }
+    
+    guard operation.hasNextIteration && operation.error == nil else {
+      finishCurrentOperation()
       return
     }
     
-    
-    let semaphore: DispatchSemaphore = {
-      if let sem = self.sem {
-        return sem
-      } else {
-        self.waitCount = 0
-        return DispatchSemaphore(value: 0)
-      }
-    }()
-    
-    self.waitCount += 1
-    semaphore.wait()
-    
-    if let error = syncOperationError {
-      syncOperationError = nil
-      throw error
+    do {
+      try operation.main(interactor: monitor)
+      scheduleCurrentOperationTimeout(operation.responseTimeout)
+    } catch {
+      operation.didReceiveExternalError(error)
+      executeNextCurrentOperationIteration()
     }
   }
   
   
-  
-  
-  
-  private func signalAndDropSemaphore() {
-    if let sem = sem {
-      let waitCount = self.waitCount
-      
-      self.sem = nil
-      self.waitCount = 0
-      
-      for _ in 0..<waitCount {
-         sem.signal()
-      }
-     
+  public func dropCurrentOperaton() {
+    if let currentOperation = self.currentOperation {
+      currentOperation.didReceiveExternalError(BLEOperationError.interrupted)
+      finishCurrentOperation()
     }
   }
-  
-  
-  
+
   
   private func finishCurrentOperation() {
    
-    defer {
-      signalAndDropSemaphore()
-    }
-    
     guard let currentOperation = currentOperation else {
       return
     }
     
     self.currentOperation = nil
-    currentOperation.didComplete()
-    syncOperationError = currentOperation.error
-    didEndOperation(currentOperation)
+    delegate?.bleDevice?(self, didFinishOperation: currentOperation)
+    didFinishOperation(currentOperation)
     setInterfaceStateAndNotifyDelegate(.free)
   }
   
@@ -325,14 +236,18 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   
   
-  final func waitForNextOperationIteration(waitingTime: TimeInterval){
+  final func scheduleCurrentOperationTimeout(_ timeout: TimeInterval){
     
     weak var current = self.currentOperation
     
-    interfaceQueue.asyncAfter(deadline: .now() + waitingTime) {[weak self] in
+    interfaceQueue.asyncAfter(deadline: .now() + timeout) {[weak self] in
       guard let `self` = self else { return }
       
-      guard let currentOperation = self.currentOperation, currentOperation === current else {
+      guard let monitoringOpeartion = current,
+            let currentOperation = self.currentOperation,
+            currentOperation === monitoringOpeartion,
+            currentOperation.executionTimestamp == monitoringOpeartion.executionTimestamp
+      else {
         return
       }
       
@@ -343,81 +258,48 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   
   
-  open func validateResposeOnGlobalErrors(_ data: Data) throws {
-    
-  }
+  open func validateResposeOnGlobalErrors(_ data: Data) throws {}
   
   
-  func peripheralMonitor(monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?) {
+  
+  public func peripheralMonitor(monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?) {
     
     
     /* Notify */
     
-    didUpdateValueForCharacteristic(uuid: uuid, error: error)
-    
+    delegate?.bleDevice?(self, didUpdateValueForCharacteristicUUID: uuid, error: error)
     
     /* Getting data from characteristic */
     
-    guard let receivedData = monitor.retrieveCachedData(forCharacteristicUUID: uuid) else {
+    let receivedData = monitor.retrieveCachedData(forCharacteristicUUID: uuid) ?? Data()
+    
+    guard let operation = findRespondingOperation(onCharacteristicUUID: uuid),
+          operation.canRespondOnData(data: receivedData)
+    else {
       return
     }
     
-    
-    /* Catch global errors */
-    
-    do {
-      try validateResposeOnGlobalErrors(receivedData)
-    } catch {
-      if let operation = self.currentOperation {
-        operation.didReceiveError(error)
-        finishCurrentOperation()
-      }
-      return
-    }
-    
-    
-    /* Current operation should be, else it's not expected result */
-    guard let operation = self.currentOperation,
-      /* should be expected characteristic */
-      operation.responseCharacteristicUUID == uuid,
-      /* Operation should validate resposne */
-      operation.validateThisOperationIsDestination(for: receivedData) else {
-      /* Else maybe its passive receiving  */
-      didReceiveInPassiveMode(data: receivedData, fromCharacteristicWithUUID: uuid)
-      return
-    }
-    
-     
-    
-    defer {
-      if operation.error != nil {
-        finishCurrentOperation()
-      } else {
-        if operation.requiredSeveralResponses {
-          waitForNextOperationIteration(waitingTime: operation.awaitingTimeInterval)
-        } else {
-          finishCurrentOperation()
-        }
-      }
-    }
-    
-    
-    
-    if let error = error {
-      operation.didReceiveError(error)
-      return
-    }
-    
-    // if device respond error
-    
-    operation.didReceiveData(receivedData)
+    operation.didUpdateValue(receivedData, forCharacteristicUUID: uuid, error: error)
+    executeNextCurrentOperationIteration()
   }
   
   
-  func peripheralMonitor(monitor: PeripheralMonitor, didWriteValueForCharacteristic uuid: CBUUID, error: Error?) {
-    didWriteValueForCharacteristic(uuid: uuid, error: error)
+  
+  
+  private func findRespondingOperation(onCharacteristicUUID uuid: CBUUID) -> BLEOperation? {
+    if let op = self.currentOperation, op.canRespondOnCharacteristic(characteristicUUID: uuid) {
+      return op
+    }
+    return nil
   }
   
+  
+  public func peripheralMonitor(monitor: PeripheralMonitor, didWriteValueForCharacteristic uuid: CBUUID, error: Error?) {
+    delegate?.bleDevice?(self, didWriteValueForCharacteristicUUID: uuid, error: error)
+    if let opertation = findRespondingOperation(onCharacteristicUUID: uuid) {
+      opertation.didWriteValue(forCharacteristicUUID: uuid, error: error)
+    }
+  }
   
   
   
@@ -442,8 +324,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   
   
-  func peripheralMonitor(monitor: PeripheralMonitor, didEndScanning error: Error?) {
-    
+  public func peripheralMonitor(monitor: PeripheralMonitor, didEndScanning error: Error?) {
     if error == nil {
       self.interfaceState = .free
     }
@@ -451,30 +332,18 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  open func didWriteValue(error: Error?) {
-    /* Should be overriden */
+  open func didFinishOperation(_ operation: BLEOperation) {
+    
   }
   
-  open func didEndOperation(_ operation: BLEoperation) {
-    /* Should be overriden */
-  }
   
 }
 
-extension BLEoperation {
+extension BLEOperation {
   public func execute(at device: BLEbaseDevice) throws {
-    try device.execute(operation: self)
+    try device.executeOperation(self)
   }
 }
 
 
 
-//extension BLEbaseDevice {
-//  @discardableResult
-//  public func trySetCurrentOperation<T: BLEoperation>(_ cls: T.Type, name: BLEoperationName, targetUUID: CBUUID, userInfo: [String :Any] = [:]) throws -> T {
-//    let context = T.init(name: name, targetUUID: targetUUID)
-//    context.userInfo = userInfo
-//    try trySetCurrentOperation(context)
-//    return context
-//  }
-//}

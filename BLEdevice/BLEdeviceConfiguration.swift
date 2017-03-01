@@ -59,6 +59,8 @@ public class BLEdeviceConfiguration: NSObject {
 }
 
 
+
+
 extension BLEdeviceConfiguration {
   
   @nonobjc
@@ -112,6 +114,7 @@ extension BLEdeviceConfiguration {
     return serviceDescriptions.map { $0.serviceUUID }
   }
 }
+
 
 
 
