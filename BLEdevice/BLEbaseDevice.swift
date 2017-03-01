@@ -183,6 +183,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   public func executeOperation(_ operation: BLEOperation) throws {
     try trySetCurrentOperation(operation)
+    (operation as? BLEBaseOperation)?.interactor = monitor
     delegate?.bleDevice?(self, willExecuteOperation: operation)
     executeNextCurrentOperationIteration()
   }
@@ -202,7 +203,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     }
     
     do {
-      try operation.main(interactor: monitor)
+      try operation.start()
       scheduleCurrentOperationTimeout(operation.responseTimeout)
     } catch {
       operation.didReceiveExternalError(error)
@@ -251,7 +252,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
         return
       }
       
-      self.finishCurrentOperation()
+      self.executeNextCurrentOperationIteration()
     }
     
   }

@@ -97,8 +97,7 @@ public enum BLEOperationError: Error {
   var responseTimeout: TimeInterval { get }
   var hasNextIteration: Bool { get }
   
-  
-  func main(interactor: PeripheralInteractor) throws
+  func start() throws
   
   func didUpdateValue(_ data: Data, forCharacteristicUUID uuid: CBUUID, error: Error?)
   func didWriteValue(forCharacteristicUUID uuid: CBUUID, error: Error?)
@@ -114,6 +113,8 @@ open class BLEBaseOperation: BLEOperation {
   
   
   private var executedOnce: Bool = false
+  public internal(set) var interactor: PeripheralInteractor!
+  
   public let name: String
   
   public init(name: String) {
@@ -144,9 +145,14 @@ open class BLEBaseOperation: BLEOperation {
     self.executionTimestamp = Date.timeIntervalSinceReferenceDate
   }
   
-  open func main(interactor: PeripheralInteractor) throws {
-    self.executedOnce = true
-    updateExecutionTimestamp()
+  final public func start() throws {
+     self.executedOnce = true
+     updateExecutionTimestamp()
+     try main()
+  }
+  
+  open func main() throws {
+   
   }
   
   open func didUpdateValue(_ data: Data, forCharacteristicUUID uuid: CBUUID, error: Error?) {
