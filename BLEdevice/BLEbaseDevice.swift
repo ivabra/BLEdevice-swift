@@ -184,7 +184,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   private func executeNextCurrentOperationIteration() {
  
     guard let operation = self.currentOperation else {
-      fatalError()
+      return
     }
     
     guard operation.hasNextIteration && operation.error == nil else {
@@ -241,7 +241,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
       else {
         return
       }
-      
+      currentOperation.timeout()
       self.executeNextCurrentOperationIteration()
     }
     
