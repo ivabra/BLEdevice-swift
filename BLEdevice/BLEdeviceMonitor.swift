@@ -221,14 +221,14 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
   @discardableResult
   private func scan_discoverService() -> Bool {
     
-    let uuids = config.servicesUUIDs
+    let servicesUUIDs = config.servicesUUIDs
     
     do{
-      _ = try discoveredServices(for: Set(uuids))
+      _ = try discoveredServices(for: Set(servicesUUIDs))
       return true
     } catch {}
   
-    peripheral.discoverServices(nil)
+    peripheral.discoverServices(servicesUUIDs)
     return false
   }
   
@@ -239,14 +239,14 @@ class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeripheralDel
     let services = try! self.discoveredServices(for: servicesUUIDs)
     for service in services {
     
-      let characteristicsUUID = config
+      let characteristicsUUIDs = config
         .serviceDescription(for:service.uuid)
         .characteristics.map { $0.uuid }
       
       do {
-         let _ = try discoveredCharacteristics(for: Set(characteristicsUUID), serviceUUID: service.uuid)
+         let _ = try discoveredCharacteristics(for: Set(characteristicsUUIDs), serviceUUID: service.uuid)
       } catch {
-        peripheral.discoverCharacteristics(nil, for: service)
+        peripheral.discoverCharacteristics(characteristicsUUIDs, for: service)
         return false
       }
       

@@ -107,18 +107,24 @@ public enum BLEOperationError: Error {
 }
 
 
-
-
 open class BLEBaseOperation: BLEOperation {
   
   
   private var executedOnce: Bool = false
   public internal(set) var interactor: PeripheralInteractor!
   
-  public let name: String
+  public let operationName: BLEoperationName
+  
+  public var name: String {
+    return operationName.rawValue
+  }
   
   public init(name: String) {
-    self.name = name
+    self.operationName = BLEoperationName(rawValue: name)
+  }
+  
+  public convenience init(name: BLEoperationName) {
+    self.init(name: name.rawValue)
   }
   
   public var error: Error?

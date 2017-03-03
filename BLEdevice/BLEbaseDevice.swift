@@ -131,16 +131,6 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  open var defaultOperationRequestUUID: CBUUID? {
-    return nil
-  }
-  
-  
-  open var defaultOperationResponseUUID: CBUUID? {
-    return nil
-  }
-  
-  
   public func prepare() {
     setInterfaceStateAndNotifyDelegate(.preparing)
     monitor.scan()
@@ -227,9 +217,9 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     }
     
     self.currentOperation = nil
-    delegate?.bleDevice?(self, didFinishOperation: currentOperation)
     didFinishOperation(currentOperation)
     setInterfaceStateAndNotifyDelegate(.free)
+    delegate?.bleDevice?(self, didFinishOperation: currentOperation)
   }
   
   
