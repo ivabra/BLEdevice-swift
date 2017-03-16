@@ -220,7 +220,7 @@ class BLEdeviceCentralManagerImpl : NSObject, CBCentralManagerDelegate, BLEdevic
   }
   
   func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-    log.debug((cent))
+    log.debug()
     let device = findOrCreateDevice(for: peripheral)
     device.didFailToConnect(error: error)
     delegate?.bleDeviceManager?(self, didFailToConnect: device, error: error)
