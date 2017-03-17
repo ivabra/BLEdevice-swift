@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4828C2603A0FF98F47768AA0 /* Pods_BLEdevice_Sample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 70A1B192031ABCF24945BA69 /* Pods_BLEdevice_Sample.framework */; };
 		9F5A607A1E464BF500F03D1D /* BLEdevice.h in Headers */ = {isa = PBXBuildFile; fileRef = 9F5A60781E464BF500F03D1D /* BLEdevice.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9F5A60811E464C0A00F03D1D /* BLEdeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5A60801E464C0A00F03D1D /* BLEdeviceManager.swift */; };
 		9F5A60831E464C5A00F03D1D /* BLEdevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5A60821E464C5A00F03D1D /* BLEdevice.swift */; };
@@ -25,6 +26,7 @@
 		9F5A60A71E46BE9200F03D1D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9F5A60A51E46BE9200F03D1D /* LaunchScreen.storyboard */; };
 		9F5A60AC1E46BE9F00F03D1D /* BLEdevice.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5A60751E464BF500F03D1D /* BLEdevice.framework */; };
 		9F5A60AD1E46BE9F00F03D1D /* BLEdevice.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5A60751E464BF500F03D1D /* BLEdevice.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		BA60EDA0179696A953FE3B05 /* Pods_BLEdevice.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 937C07905C20B77885B10851 /* Pods_BLEdevice.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +54,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C95B4543639EBE796C3E69D /* Pods-BLEdevice.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BLEdevice.release.xcconfig"; path = "Pods/Target Support Files/Pods-BLEdevice/Pods-BLEdevice.release.xcconfig"; sourceTree = "<group>"; };
+		5052ED8610D95127B6508868 /* Pods-BLEdevice.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BLEdevice.debug.xcconfig"; path = "Pods/Target Support Files/Pods-BLEdevice/Pods-BLEdevice.debug.xcconfig"; sourceTree = "<group>"; };
+		70A1B192031ABCF24945BA69 /* Pods_BLEdevice_Sample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BLEdevice_Sample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		92AF6517288B6024B780F80F /* Pods-BLEdevice-Sample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BLEdevice-Sample.release.xcconfig"; path = "Pods/Target Support Files/Pods-BLEdevice-Sample/Pods-BLEdevice-Sample.release.xcconfig"; sourceTree = "<group>"; };
+		937C07905C20B77885B10851 /* Pods_BLEdevice.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BLEdevice.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F5A60751E464BF500F03D1D /* BLEdevice.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = BLEdevice.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F5A60781E464BF500F03D1D /* BLEdevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BLEdevice.h; sourceTree = "<group>"; };
 		9F5A60791E464BF500F03D1D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -72,6 +79,8 @@
 		9F5A60A31E46BE9200F03D1D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9F5A60A61E46BE9200F03D1D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9F5A60A81E46BE9200F03D1D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9FA7F45E1E7C26F700C6026A /* BLEdevice.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = BLEdevice.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		FFC47F814C54D323B80ED6BF /* Pods-BLEdevice-Sample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BLEdevice-Sample.debug.xcconfig"; path = "Pods/Target Support Files/Pods-BLEdevice-Sample/Pods-BLEdevice-Sample.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +88,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA60EDA0179696A953FE3B05 /* Pods_BLEdevice.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,18 +97,31 @@
 			buildActionMask = 2147483647;
 			files = (
 				9F5A60AC1E46BE9F00F03D1D /* BLEdevice.framework in Frameworks */,
+				4828C2603A0FF98F47768AA0 /* Pods_BLEdevice_Sample.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		47B69901C1213C5FA72814EF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				937C07905C20B77885B10851 /* Pods_BLEdevice.framework */,
+				70A1B192031ABCF24945BA69 /* Pods_BLEdevice_Sample.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9F5A606B1E464BF500F03D1D = {
 			isa = PBXGroup;
 			children = (
 				9F5A60771E464BF500F03D1D /* BLEdevice */,
 				9F5A609B1E46BE9200F03D1D /* BLEdevice-Sample */,
 				9F5A60761E464BF500F03D1D /* Products */,
+				ECB4AFE168FF2E15FCB2994E /* Pods */,
+				47B69901C1213C5FA72814EF /* Frameworks */,
+				9FA7F45E1E7C26F700C6026A /* BLEdevice.podspec */,
 			);
 			sourceTree = "<group>";
 		};
@@ -143,6 +166,17 @@
 			path = "BLEdevice-Sample";
 			sourceTree = "<group>";
 		};
+		ECB4AFE168FF2E15FCB2994E /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				5052ED8610D95127B6508868 /* Pods-BLEdevice.debug.xcconfig */,
+				4C95B4543639EBE796C3E69D /* Pods-BLEdevice.release.xcconfig */,
+				FFC47F814C54D323B80ED6BF /* Pods-BLEdevice-Sample.debug.xcconfig */,
+				92AF6517288B6024B780F80F /* Pods-BLEdevice-Sample.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -161,10 +195,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9F5A607D1E464BF500F03D1D /* Build configuration list for PBXNativeTarget "BLEdevice" */;
 			buildPhases = (
+				D5B9D878BCBFDE93473573B2 /* [CP] Check Pods Manifest.lock */,
 				9F5A60701E464BF500F03D1D /* Sources */,
 				9F5A60711E464BF500F03D1D /* Frameworks */,
 				9F5A60721E464BF500F03D1D /* Headers */,
 				9F5A60731E464BF500F03D1D /* Resources */,
+				3858F841C3F7146A3977EB02 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -179,10 +215,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9F5A60A91E46BE9200F03D1D /* Build configuration list for PBXNativeTarget "BLEdevice-Sample" */;
 			buildPhases = (
+				03C7C29D8473788D77CBA69B /* [CP] Check Pods Manifest.lock */,
 				9F5A60961E46BE9200F03D1D /* Sources */,
 				9F5A60971E46BE9200F03D1D /* Frameworks */,
 				9F5A60981E46BE9200F03D1D /* Resources */,
 				9F5A60B01E46BEA000F03D1D /* Embed Frameworks */,
+				1C504A85A326018C1C73CADD /* [CP] Embed Pods Frameworks */,
+				9E832F94AEA99B510F527FC4 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -255,6 +294,84 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		03C7C29D8473788D77CBA69B /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		1C504A85A326018C1C73CADD /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-BLEdevice-Sample/Pods-BLEdevice-Sample-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		3858F841C3F7146A3977EB02 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-BLEdevice/Pods-BLEdevice-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		9E832F94AEA99B510F527FC4 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-BLEdevice-Sample/Pods-BLEdevice-Sample-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		D5B9D878BCBFDE93473573B2 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9F5A60701E464BF500F03D1D /* Sources */ = {
@@ -414,6 +531,7 @@
 		};
 		9F5A607E1E464BF500F03D1D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5052ED8610D95127B6508868 /* Pods-BLEdevice.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
@@ -436,6 +554,7 @@
 		};
 		9F5A607F1E464BF500F03D1D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4C95B4543639EBE796C3E69D /* Pods-BLEdevice.release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
@@ -457,8 +576,8 @@
 		};
 		9F5A60AA1E46BE9200F03D1D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FFC47F814C54D323B80ED6BF /* Pods-BLEdevice-Sample.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 55BKHE3292;
 				INFOPLIST_FILE = "BLEdevice-Sample/Info.plist";
@@ -472,8 +591,8 @@
 		};
 		9F5A60AB1E46BE9200F03D1D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 92AF6517288B6024B780F80F /* Pods-BLEdevice-Sample.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 55BKHE3292;
 				INFOPLIST_FILE = "BLEdevice-Sample/Info.plist";
