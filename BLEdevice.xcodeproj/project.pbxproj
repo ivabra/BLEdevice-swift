@@ -79,6 +79,7 @@
 		9F5A60A31E46BE9200F03D1D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9F5A60A61E46BE9200F03D1D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9F5A60A81E46BE9200F03D1D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9FA7F45E1E7C26F700C6026A /* BLEdevice.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = BLEdevice.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		FFC47F814C54D323B80ED6BF /* Pods-BLEdevice-Sample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BLEdevice-Sample.debug.xcconfig"; path = "Pods/Target Support Files/Pods-BLEdevice-Sample/Pods-BLEdevice-Sample.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -120,6 +121,7 @@
 				9F5A60761E464BF500F03D1D /* Products */,
 				ECB4AFE168FF2E15FCB2994E /* Pods */,
 				47B69901C1213C5FA72814EF /* Frameworks */,
+				9FA7F45E1E7C26F700C6026A /* BLEdevice.podspec */,
 			);
 			sourceTree = "<group>";
 		};
