@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   #
 
   s.name         = "BLEdevice"
-  s.version      = "0.2.0"
+  s.version      = "0.2.1"
   s.summary      = "Library that eases the way to interact with Bluetooth Low Energy devices."
 
   # This description is used to generate tags and improve search results.

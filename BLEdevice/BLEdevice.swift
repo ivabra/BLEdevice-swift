@@ -10,23 +10,6 @@ import Foundation
 import CoreBluetooth
 import XCGLogger
 
-extension XCGLogger {
-  static func create() -> XCGLogger {
-    let log = XCGLogger(identifier: "BLEdevice", includeDefaultDestinations: true)
-    log.setup(level: .debug,
-              showLogIdentifier: true,
-              showFunctionName: true,
-              showThreadName: false,
-              showLevel: false,
-              showFileNames: false,
-              showLineNumbers: false,
-              showDate: true)
-    return log
-  }
-}
-
-let log = XCGLogger.create()
-
 @objc public protocol BLEdeviceDelegate: class {
   
   @objc optional func bleDevice(_ device: BLEdevice, willSendData data: Data, toCharateristic characteristicUUID: CBUUID)

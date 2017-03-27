@@ -26,6 +26,7 @@
 		9F5A60A71E46BE9200F03D1D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9F5A60A51E46BE9200F03D1D /* LaunchScreen.storyboard */; };
 		9F5A60AC1E46BE9F00F03D1D /* BLEdevice.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5A60751E464BF500F03D1D /* BLEdevice.framework */; };
 		9F5A60AD1E46BE9F00F03D1D /* BLEdevice.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9F5A60751E464BF500F03D1D /* BLEdevice.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		9F702DDE1E7D373B00227D5D /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F702DDD1E7D373B00227D5D /* Logger.swift */; };
 		BA60EDA0179696A953FE3B05 /* Pods_BLEdevice.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 937C07905C20B77885B10851 /* Pods_BLEdevice.framework */; };
 /* End PBXBuildFile section */
 
@@ -79,6 +80,7 @@
 		9F5A60A31E46BE9200F03D1D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9F5A60A61E46BE9200F03D1D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9F5A60A81E46BE9200F03D1D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9F702DDD1E7D373B00227D5D /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		9FA7F45E1E7C26F700C6026A /* BLEdevice.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = BLEdevice.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		FFC47F814C54D323B80ED6BF /* Pods-BLEdevice-Sample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BLEdevice-Sample.debug.xcconfig"; path = "Pods/Target Support Files/Pods-BLEdevice-Sample/Pods-BLEdevice-Sample.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -149,6 +151,7 @@
 				9F5A608E1E469D3D00F03D1D /* BLEinterfaceState.swift */,
 				9F5A60921E46A65F00F03D1D /* BLEdeviceUserInfo.swift */,
 				9F5A60941E46ABDA00F03D1D /* BLEdeviceConfiguration.swift */,
+				9F702DDD1E7D373B00227D5D /* Logger.swift */,
 			);
 			path = BLEdevice;
 			sourceTree = "<group>";
@@ -379,6 +382,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9F5A608D1E469CE600F03D1D /* BLEoperationName.swift in Sources */,
+				9F702DDE1E7D373B00227D5D /* Logger.swift in Sources */,
 				9F5A60871E4661F200F03D1D /* Errors.swift in Sources */,
 				9F5A60931E46A65F00F03D1D /* BLEdeviceUserInfo.swift in Sources */,
 				9F5A60891E469BFF00F03D1D /* BLEbaseDevice.swift in Sources */,
