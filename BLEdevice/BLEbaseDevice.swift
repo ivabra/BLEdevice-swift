@@ -318,13 +318,14 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   open func didConnect() {
     log.debug("\(self) was connected")
+    setInterfaceStateAndNotifyDelegate(.initial)
     delegate?.bleDeviceDidConnect?(self)
   }
   
   
   open func didDisconnect(error: Error?) {
     log.debug("\(self) was disconnedted with error \(error)")
-    interfaceState = .initial
+    setInterfaceStateAndNotifyDelegate(.initial)
     delegate?.bleDevice?(self, didDisconnect: error)
   }
   

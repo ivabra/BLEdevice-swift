@@ -115,9 +115,6 @@ extension BLEdeviceConfiguration {
   }
 }
 
-
-
-
 public struct CharacterisicDescription {
   public let uuid: CBUUID
   public let writeType: CBCharacteristicWriteType?
@@ -130,7 +127,6 @@ public struct CharacterisicDescription {
   }
   
 }
-
 
 public class ServiceDescription {
   public var serviceUUID: CBUUID
