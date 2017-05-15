@@ -22,8 +22,6 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   let monitor: PeripheralMonitor
   var waitCount: Int = 0
   
- // open var defaultOperationAwaitingTimeInterval: TimeInterval = 3.0
-  
   /* State */
   
   public var currentOperation: BLEOperation?
@@ -37,23 +35,17 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   public let userInfo: BLEdeviceUserInfo = .init()
   
-  
   /* User info */
   
-  
   let internalUserInfo: BLEdeviceUserInfo = .init()
-  
   
   open class func defaultConfiguration() -> BLEdeviceConfiguration {
     return .empty
   }
 
-  
   open class func validatePeripheral(_ peripheral: CBPeripheral) -> Bool {
     fatalError()
   }
-  
-  
   
   public func getPeripheral() throws -> CBPeripheral {
     return monitor.peripheral
@@ -64,7 +56,6 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     return monitor.peripheral.identifier
   }
   
-  
   public var name: String? {
     return monitor.peripheral.name
   }
@@ -73,12 +64,10 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     return monitor.peripheral.state
   }
   
-  
   required convenience public init(peripheral: CBPeripheral) {
     let config = type(of: self).defaultConfiguration()
     self.init(peripheral: peripheral, config: config)
   }
-  
   
   public init(peripheral: CBPeripheral, config: BLEdeviceConfiguration) {
     let monitor = PeripheralMonitorCreate(peripheral: peripheral, configuration: config)
@@ -86,16 +75,12 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     super.init()
     monitor.delegate = self
   }
-  
 
-  
   lazy var interfaceQueue : DispatchQueue = { () -> DispatchQueue in
     let id = ObjectIdentifier(self).hashValue
     let queue = DispatchQueue(label: "\(type(of:self)).\(id)", qos: .utility, attributes: .concurrent)
     return queue
   }()
-  
-  
   
   func assertInteractionState() throws {
     guard isPrepared else {
@@ -267,10 +252,10 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   }
   
   
-  
-  open func validateResposeOnGlobalErrors(_ data: Data) throws {}
-  
-  
+//  
+//  open func validateResposeOnGlobalErrors(_ data: Data) throws {}
+//  
+//  
   
   public func peripheralMonitor(monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?) {
     log.debug("Characteristic with UUID \(uuid) was updated (error: \(error))")
