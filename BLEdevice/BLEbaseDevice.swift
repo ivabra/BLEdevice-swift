@@ -9,13 +9,11 @@
 import Foundation
 import CoreBluetooth
 
-@objc
-open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
+open class BLEbaseDevice: BLEdevice {
   
   open class func primaryServiceUUID() -> CBUUID {
     fatalError()
   }
-  
   
   public weak var delegate: BLEdeviceDelegate?
   
@@ -27,7 +25,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   public var currentOperation: BLEOperation?
   
   public
-  private(set) var interfaceState: BLEinterfaceState = .initial {
+  fileprivate(set) var interfaceState: BLEinterfaceState = .initial {
     didSet {
       log.debug("\(self) changed interface state to \((self.interfaceState)). Previous state was \((oldValue))")
     }
@@ -72,7 +70,6 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   public init(peripheral: CBPeripheral, config: BLEdeviceConfiguration) {
     let monitor = PeripheralMonitorCreate(peripheral: peripheral, configuration: config)
     self.monitor = monitor
-    super.init()
     monitor.delegate = self
   }
 
@@ -137,7 +134,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   func setInterfaceStateAndNotifyDelegate(_ state: BLEinterfaceState) {
     log.debug("Setting interface state to \(state.rawValue)")
     interfaceState = state
-    delegate?.bleDeviceDidChangeInterfaceState?(self)
+    delegate?.bleDeviceDidChangeInterfaceState(self)
   }
   
   
@@ -153,23 +150,23 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
   
   
   public func send(data: Data, forCharacteristicUUID uuid: CBUUID) throws {
-    delegate?.bleDevice?(self, willSendData: data, toCharateristic: uuid)
+    delegate?.bleDevice(self, willSendData: data, toCharacteristic: uuid)
     log.debug("Sending data \(data) to characteristic with UUID \(uuid)...")
     try monitor.send(data: data, characteristicUUID: uuid)
     log.debug("...done")
-    delegate?.bleDevice?(self, didSendData: data, toCharateristic: uuid)
+    delegate?.bleDevice(self, didSendData: data, toCharacteristic: uuid)
   }
  
   
   public func readCharateristicValue(forUUID uuid: CBUUID) throws {
-    log.debug("Request for reading characteristic with uuid \(uuid)")
+    log.debug("reading value of characteristic(\(uuid))")
     try monitor.readValue(forCharacteristicUUID: uuid)
   }
   
   public func charateristicValue(forUUID uuid: CBUUID) -> Data? {
     log.debug("Getting characteristic value for characteristic \(uuid)")
     let data = monitor.retrieveData(forCharacteristicUUID: uuid)
-    log.debug("Value is \(data)")
+    log.debug { "Value of \(uuid) is " + data.descriptionOrNil }
     return data
   }
   
@@ -177,14 +174,14 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     log.debug("Executing operation with name `\(operation.name)` and type \(type(of: operation))")
     try trySetCurrentOperation(operation)
     (operation as? BLEBaseOperation)?.interactor = monitor
-    delegate?.bleDevice?(self, willExecuteOperation: operation)
+    delegate?.bleDevice(self, willExecuteOperation: operation)
     executeNextCurrentOperationIteration()
   }
   
   
   
   
-  private func executeNextCurrentOperationIteration() {
+  fileprivate func executeNextCurrentOperationIteration() {
     log.debug("Executing operation iteraction")
     guard let operation = self.currentOperation else {
       return
@@ -224,7 +221,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     self.currentOperation = nil
     setInterfaceStateAndNotifyDelegate(.free)
     didFinishOperation(currentOperation)
-    delegate?.bleDevice?(self, didFinishOperation: currentOperation)
+    delegate?.bleDevice(self, didFinishOperation: currentOperation)
   }
   
   
@@ -237,7 +234,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     log.debug("Scheduling operation timeout with \(timeout)s...")
     interfaceQueue.asyncAfter(deadline: .now() + timeout) {[weak self] in
       guard let `self` = self else { return }
-      log.debug("Timout for operation \(current)")
+      log.debug("Timout for operation " + self.currentOperation.descriptionOrNil)
       if let monitoringOpeartion = current,
             let currentOperation = self.currentOperation,
             currentOperation === monitoringOpeartion,
@@ -251,37 +248,7 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     }
   }
   
-  
-//  
-//  open func validateResposeOnGlobalErrors(_ data: Data) throws {}
-//  
-//  
-  
-  public func peripheralMonitor(monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?) {
-    log.debug("Characteristic with UUID \(uuid) was updated (error: \(error))")
-    
-    /* Notify */
-    
-    delegate?.bleDevice?(self, didUpdateValueForCharacteristicUUID: uuid, error: error)
-    
-    /* Getting data from characteristic */
-    
-    let receivedData = monitor.retrieveCachedData(forCharacteristicUUID: uuid) ?? Data()
-    
-    guard let operation = findRespondingOperation(onCharacteristicUUID: uuid),
-          operation.canRespondOnData(data: receivedData)
-    else {
-      return
-    }
-    
-    operation.didUpdateValue(receivedData, forCharacteristicUUID: uuid, error: error)
-    executeNextCurrentOperationIteration()
-  }
-  
-  
-  
-  
-  private func findRespondingOperation(onCharacteristicUUID uuid: CBUUID) -> BLEOperation? {
+  fileprivate func findRespondingOperation(onCharacteristicUUID uuid: CBUUID) -> BLEOperation? {
     log.debug("Getting operation that can respond on characteristic (\(uuid))")
     if let op = self.currentOperation, op.canRespondOnCharacteristic(characteristicUUID: uuid) {
       log.debug("Found \(op) with name \(op.name)")
@@ -290,56 +257,69 @@ open class BLEbaseDevice: NSObject, BLEdevice, PeripheralMonitorDelegate {
     return nil
   }
   
+  open func didConnect() {
+    log.debug("\(self) was connected")
+    setInterfaceStateAndNotifyDelegate(.initial)
+    delegate?.bleDeviceDidConnect(self)
+  }
   
-  public func peripheralMonitor(monitor: PeripheralMonitor, didWriteValueForCharacteristic uuid: CBUUID, error: Error?) {
-    log.debug("Characteristic with UUID \(uuid) was writted (error: \(error))")
-    delegate?.bleDevice?(self, didWriteValueForCharacteristicUUID: uuid, error: error)
+  
+  open func didDisconnect(error: Error?) {
+    log.debug { "\(self) was disconnected" + error.flatMap(or: "") { " with error \($0)" } }
+    setInterfaceStateAndNotifyDelegate(.initial)
+    delegate?.bleDevice(self, didDisconnect: error)
+  }
+  
+  open func didFailToConnect(error: Error?) {
+    log.debug("\(self) can't be connected" + error.flatMap(or: "", transform: { " \($0)" }) )
+    delegate?.bleDevice(self, didFailToConnect: error)
+  }
+  
+  open func didFinishOperation(_ operation: BLEOperation) {}
+  
+}
+
+extension BLEbaseDevice : PeripheralMonitorDelegate {
+  
+  public func peripheralMonitor(_ monitor: PeripheralMonitor, didWriteValueForCharacteristic uuid: CBUUID, error: Error?) {
+    log.debug("Characteristic with UUID \(uuid) was updated" + error.spaceDescription(or: ""))
+    
+    /* Notify */
+    delegate?.bleDevice(self, didUpdateValueForCharacteristic: uuid, error: error)
+    
+    /* Getting data from characteristic */
+    
+    let receivedData = monitor.retrieveCachedData(forCharacteristicUUID: uuid) ?? Data()
+    
+    guard let operation = findRespondingOperation(onCharacteristicUUID: uuid),
+      operation.canRespondOnData(data: receivedData)
+      else {
+        return
+    }
+    
+    operation.didUpdateValue(receivedData, forCharacteristicUUID: uuid, error: error)
+    executeNextCurrentOperationIteration()
+    
+  }
+  
+  public func peripheralMonitor(_ monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?) {
+    log.debug("Characteristic (\(uuid)) was writted" + error.flatMap(or: "") { " \($0)" })
+    delegate?.bleDevice(self, didWriteValueToCharacteristic: uuid, error: error)
     if let opertation = findRespondingOperation(onCharacteristicUUID: uuid) {
       opertation.didWriteValue(forCharacteristicUUID: uuid, error: error)
     }
   }
   
   
-  
-  open func didConnect() {
-    log.debug("\(self) was connected")
-    setInterfaceStateAndNotifyDelegate(.initial)
-    delegate?.bleDeviceDidConnect?(self)
-  }
-  
-  
-  open func didDisconnect(error: Error?) {
-    log.debug("\(self) was disconnedted with error \(error)")
-    setInterfaceStateAndNotifyDelegate(.initial)
-    delegate?.bleDevice?(self, didDisconnect: error)
-  }
-  
-  open func didFailToConnect(error: Error?) {
-    log.debug("\(self) can't be connected because \(error)")
-    delegate?.bleDevice?(self, didFailToConnect: error)
-  }
-  
-  
-  
-  /* MARK: Monitor response */
-  
-  
-  
-  public func peripheralMonitor(monitor: PeripheralMonitor, didEndScanning error: Error?) {
-    log.debug("Finish scanning services and characteristics (error: \(error))")
+  public func peripheralMonitor(_ monitor: PeripheralMonitor, didEndScanning error: Error?) {
+    log.debug("Finish scanning services and characteristics" + error.spaceDescription(or: ""))
     if error == nil {
       self.interfaceState = .free
     } else {
       self.interfaceState = .initial
     }
-    delegate?.bleDevice?(self, didEndInitializing: error)
+    delegate?.bleDevice(self, didEndInitializing: error)
   }
-  
-  
-  open func didFinishOperation(_ operation: BLEOperation) {
-    
-  }
-  
   
 }
 
@@ -349,5 +329,34 @@ extension BLEOperation {
   }
 }
 
+infix operator +?
+func +?<T>(left: String, right: T?) -> String {
+  return left + (right.flatMap {"\($0)"} ?? "")
+}
 
+extension Optional {
+  func flatMap<U>(or: U, transform: (Wrapped) throws -> U? ) rethrows -> U {
+    return try flatMap(transform) ?? or
+  }
+  
+  func description(or descriptionWhenNil: String) -> String {
+    return flatMap { "\($0)" } ?? descriptionWhenNil
+  }
+  
+  func spaceDescription(or descriptionWhenNil: String) -> String {
+    return flatMap { " \($0)" } ?? descriptionWhenNil
+  }
+  
+  func spaceDescriptionOrEmpty() -> String {
+    return spaceDescription(or: "")
+  }
+  
+  var descriptionOrNil: String {
+    return description(or: "nil")
+  }
+  
+  var descriptionOrEmpty: String {
+    return description(or: "")
+  }
+}
 
