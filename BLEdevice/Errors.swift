@@ -11,6 +11,5 @@ import Foundation
 public enum BLEerror: Error {
   case serviceNotDiscovered
   case characteristicNotDiscovered
-  
 }
 

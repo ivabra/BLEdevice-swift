@@ -10,13 +10,11 @@ import Foundation
 import CoreBluetooth
 import XCGLogger
 
-
 public enum BLEdeviceError : Error {
   case notPrepared
   case interfaceStateNotFree
   case currentOperationNotCompleted
 }
-
 
 public protocol BLEdevice: class {
   

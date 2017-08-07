@@ -35,8 +35,6 @@ class ViewController: UIViewController, BLEdeviceCentralManagerDelegate, BLEdevi
   }
 }
 
-
-
 class SimpleDevice: BLEbaseDevice {
   
   override class func defaultConfiguration() -> BLEdeviceConfiguration {

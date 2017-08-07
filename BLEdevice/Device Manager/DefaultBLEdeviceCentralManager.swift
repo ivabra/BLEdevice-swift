@@ -22,7 +22,6 @@ class DefaultBLEdeviceCentralManager : NSObject, CBCentralManagerDelegate, BLEde
   private var isScanning_macOS: Bool = false
   #endif
   
-  
   init(queue: DispatchQueue, restoreIdentifier: String? = nil) {
     super.init()
     var options = [String : Any]()
@@ -31,7 +30,6 @@ class DefaultBLEdeviceCentralManager : NSObject, CBCentralManagerDelegate, BLEde
     #endif
     self.centralManager = CBCentralManager(delegate: self, queue: queue, options: options)
   }
-  
   
   func registerDeviceType(_ deviceType: BLEdevice.Type) {
     guard !registeredTypes.contains(where: { $0 === deviceType }) else {
@@ -100,7 +98,6 @@ class DefaultBLEdeviceCentralManager : NSObject, CBCentralManagerDelegate, BLEde
       return isScanning_macOS
     #endif
   }
-  
   
   func devices(for uuids: [UUID]) -> [BLEdevice] {
     let ps = centralManager.retrievePeripherals(withIdentifiers: uuids)

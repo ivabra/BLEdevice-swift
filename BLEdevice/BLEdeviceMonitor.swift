@@ -9,10 +9,6 @@
 import Foundation
 import CoreBluetooth
 
-
-
-
-
 public protocol PeripheralMonitorDelegate: class {
   func peripheralMonitor(_ monitor: PeripheralMonitor, didEndScanning error: Error?)
   func peripheralMonitor(_ monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?)
@@ -22,7 +18,6 @@ public protocol PeripheralMonitorDelegate: class {
 func PeripheralMonitorCreate(peripheral: CBPeripheral, configuration: BLEdeviceConfiguration) -> PeripheralMonitor {
   return PeripheralMonitorDefaultImpl(peripheral: peripheral, configuration: configuration)
 }
-
 
 public protocol PeripheralInteractor {
   func send(data: Data, characteristicUUID uuid: CBUUID) throws

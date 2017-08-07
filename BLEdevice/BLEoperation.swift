@@ -9,11 +9,9 @@
 import Foundation
 import CoreBluetooth
 
-
 public enum BLEOperationError: Error {
   case interrupted
 }
-
 
 @objc public protocol BLEOperation: class {
   var name: String { get }

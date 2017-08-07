@@ -20,16 +20,6 @@ public protocol BLEdeviceCentralManagerDelegate : class {
 }
 
 
-public extension BLEdeviceCentralManagerDelegate {
-  func bleDeviceManagerDidUpdateState(_ manager: BLEdeviceCentralManager) {}
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didDiscoverDevice device: BLEdevice, rssi: NSNumber) {}
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didConnectDevice device: BLEdevice) {}
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didDisconnectDevice device: BLEdevice, error: Error?) {}
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didFailToConnect device: BLEdevice, error: Error?) {}
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, willRestoreDevices devices: [BLEdevice]) {}
-}
-
-
 public protocol BLEdeviceCentralManager: class {
   var delegate: BLEdeviceCentralManagerDelegate? { get set }
   var state: BLEdeviceManagerState { get }
@@ -38,7 +28,7 @@ public protocol BLEdeviceCentralManager: class {
   func stopScan()
   
   var isScanning: Bool { get }
-  
+
   func devices(for uuids: [UUID]) -> [BLEdevice]
   func connectedDevices(withTypes: [BLEdevice.Type]) -> [BLEdevice]
   

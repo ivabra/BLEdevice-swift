@@ -49,7 +49,6 @@ open class BLEbaseDevice: BLEdevice {
     return monitor.peripheral
   }
   
-  
   public var identifier: UUID {
     return monitor.peripheral.identifier
   }
@@ -93,8 +92,6 @@ open class BLEbaseDevice: BLEdevice {
     }
   }
   
-  
-  
   func trySetCurrentOperation(_ operation: BLEOperation) throws {
     log.debug("Setting current operation with name \(operation.name) and type \(type(of: operation))")
     try assertInteractionState()
@@ -102,8 +99,6 @@ open class BLEbaseDevice: BLEdevice {
     log.debug("Operation \(operation) was set as current")
     setInterfaceStateAndNotifyDelegate(.busy)
   }
-  
-  
   
   final func dispatch(execute: @escaping (BLEbaseDevice)->()) {
     interfaceQueue.async { [weak self] in
@@ -113,11 +108,9 @@ open class BLEbaseDevice: BLEdevice {
     }
   }
   
-  
   open var isPrepared: Bool {
     return monitor.isPrepared
   }
-  
   
   public func prepare() {
     log.debug("Begin preparing...")
@@ -125,11 +118,9 @@ open class BLEbaseDevice: BLEdevice {
     monitor.scan()
   }
   
-  
   func characteristicUUID(for operation: BLEOperation) -> CBUUID {
     fatalError()
   }
-  
   
   func setInterfaceStateAndNotifyDelegate(_ state: BLEinterfaceState) {
     log.debug("Setting interface state to \(state.rawValue)")
@@ -146,8 +137,6 @@ open class BLEbaseDevice: BLEdevice {
       log.warning("State is initial, can't be as free")
     }
   }
-  
-  
   
   public func send(data: Data, forCharacteristicUUID uuid: CBUUID) throws {
     delegate?.bleDevice(self, willSendData: data, toCharacteristic: uuid)
@@ -178,9 +167,6 @@ open class BLEbaseDevice: BLEdevice {
     executeNextCurrentOperationIteration()
   }
   
-  
-  
-  
   fileprivate func executeNextCurrentOperationIteration() {
     log.debug("Executing operation iteraction")
     guard let operation = self.currentOperation else {
@@ -201,7 +187,6 @@ open class BLEbaseDevice: BLEdevice {
     }
   }
   
-  
   public func dropCurrentOperaton() {
     log.debug("Dropping current operatin...")
     if let currentOperation = self.currentOperation {
@@ -210,7 +195,6 @@ open class BLEbaseDevice: BLEdevice {
       finishCurrentOperation()
     }
   }
-
   
   private func finishCurrentOperation() {
    log.debug("Finishing current operation...")
@@ -223,11 +207,6 @@ open class BLEbaseDevice: BLEdevice {
     didFinishOperation(currentOperation)
     delegate?.bleDevice(self, didFinishOperation: currentOperation)
   }
-  
-  
-  
-  
-  
   
   final func scheduleCurrentOperationTimeout(_ timeout: TimeInterval){
     weak var current = self.currentOperation
