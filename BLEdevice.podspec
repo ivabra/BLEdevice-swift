@@ -48,6 +48,6 @@ Pod::Spec.new do |s|
    s.framework  = "CoreBluetooth"
 
   # ――― Project Settings ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
-   s.dependency "XCGLogger", "~> 5.0.1"
+   s.dependency "XCGLogger"
 
 end

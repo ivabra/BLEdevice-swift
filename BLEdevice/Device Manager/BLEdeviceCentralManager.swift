@@ -10,16 +10,6 @@
 import Foundation
 import CoreBluetooth
 
-public protocol BLEdeviceCentralManagerDelegate : class {
-  func bleDeviceManagerDidUpdateState(_ manager: BLEdeviceCentralManager)
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didDiscoverDevice device: BLEdevice, rssi: NSNumber)
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didConnectDevice device: BLEdevice)
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didDisconnectDevice device: BLEdevice, error: Error?)
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, didFailToConnect device: BLEdevice, error: Error?)
-  func bleDeviceManager(_ manager: BLEdeviceCentralManager, willRestoreDevices devices: [BLEdevice])
-}
-
-
 public protocol BLEdeviceCentralManager: class {
   var delegate: BLEdeviceCentralManagerDelegate? { get set }
   var state: BLEdeviceManagerState { get }
@@ -39,7 +29,6 @@ public protocol BLEdeviceCentralManager: class {
   func registerDeviceType(_ deviceType: BLEdevice.Type)
   func unregisterDeviceType(_ deviceType: BLEdevice.Type)
 }
-
 
 public func BLEdeviceCentralManagerCreate(queue: DispatchQueue, restoreIdentifier: String? = nil, registeredTypes: [BLEdevice.Type]? = nil) -> BLEdeviceCentralManager {
   let deviceManager = DefaultBLEdeviceCentralManager(queue: queue, restoreIdentifier: restoreIdentifier)
