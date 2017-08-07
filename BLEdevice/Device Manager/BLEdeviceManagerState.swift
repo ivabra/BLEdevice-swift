@@ -18,7 +18,7 @@ public enum BLEdeviceManagerState {
   case poweredOn
   
   
-  @available(iOS 10.0, *)
+  @available(iOS 10.0, macOS 10.13, *)
   init(_ state: CBManagerState) {
     switch state {
     case .unknown:      self = .unknown
