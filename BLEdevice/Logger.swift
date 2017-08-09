@@ -11,7 +11,7 @@ import XCGLogger
 
 let log: XCGLogger = createLogger()
 
-public func getLoggerInstance() -> XCGLogger {
+public func BLEDeviceGetLoggerInstance() -> XCGLogger {
   return log
 }
 

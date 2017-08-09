@@ -22,7 +22,7 @@ public protocol BLEdevice: class {
   static func defaultConfiguration() -> BLEdeviceConfiguration
   static func primaryServiceUUID() -> CBUUID
   
-  init(peripheral: CBPeripheral)
+  init(peripheral: CBPeripheral, baseQueue: DispatchQueue)
   
   var delegate: BLEdeviceDelegate? { get set }
   var connectionState: CBPeripheralState { get }
@@ -31,7 +31,6 @@ public protocol BLEdevice: class {
   var name: String? { get }
   
   func prepare()
-  var isPrepared: Bool { get }
   
   func getPeripheral() throws -> CBPeripheral
   
@@ -43,8 +42,10 @@ public protocol BLEdevice: class {
   func readCharateristicValue(forUUID uuid: CBUUID) throws
   func send(data: Data, forCharacteristicUUID uuid: CBUUID) throws
 
-  func executeOperation(_ operation: BLEOperation) throws
   var currentOperation: BLEOperation? { get }
-  func dropCurrentOperaton()
+  
+  func executeOperation(_ operation: BLEOperation)
+  func dropCurrentOperation()
+  func dropAllOperations()
 }
 

@@ -8,25 +8,23 @@
 
 import Foundation
 
-@objc
-public enum BLEinterfaceState: Int {
-  case initial = 0
-  case preparing = 1
-  case free = 2
-  case busy = 3
+public enum BLEinterfaceState {
+  case needPrepare
+  case preparing
+  case ready
 }
 
 extension BLEinterfaceState: CustomStringConvertible, CustomDebugStringConvertible {
+  
   public var description: String {
     switch self {
-    case .initial : return "Initital"
+    case .needPrepare : return "Need to prepare"
     case .preparing: return "Preparing"
-    case .free: return "Free"
-    case .busy: return "Busy"
+    case .ready: return "Ready"
     }
   }
   
   public var debugDescription: String {
-    return "\(description, rawValue))"
+    return "\(description, hashValue))"
   }
 }

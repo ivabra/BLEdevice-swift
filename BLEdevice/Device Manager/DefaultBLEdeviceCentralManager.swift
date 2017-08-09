@@ -22,12 +22,15 @@ class DefaultBLEdeviceCentralManager : NSObject, CBCentralManagerDelegate, BLEde
   private var isScanning_macOS: Bool = false
   #endif
   
+  let queue : DispatchQueue
+  
   init(queue: DispatchQueue, restoreIdentifier: String? = nil) {
-    super.init()
     var options = [String : Any]()
     #if TARGET_OS_IOS
       options[CBCentralManagerOptionRestoreIdentifierKey] = restoreIdentifier
     #endif
+    self.queue = queue
+    super.init()
     self.centralManager = CBCentralManager(delegate: self, queue: queue, options: options)
   }
   
@@ -129,7 +132,7 @@ class DefaultBLEdeviceCentralManager : NSObject, CBCentralManagerDelegate, BLEde
   
   private func createAndAddDevice(from peripheral: CBPeripheral) -> BLEdevice {
     let type = self.type(for: peripheral)!
-    let instance = type.init(peripheral: peripheral)
+    let instance = type.init(peripheral: peripheral, baseQueue: queue)
     self.peripheralToDeviceMap.setObject(instance, forKey: peripheral)
     return instance
   }

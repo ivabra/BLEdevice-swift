@@ -13,25 +13,34 @@ public enum BLEOperationError: Error {
   case interrupted
 }
 
-@objc public protocol BLEOperation: class {
+public protocol BLEOperation: class, CustomStringConvertible {
   var name: String { get }
   var error: Error? { get }
   var userInfo: [String : Any] { get }
   var executionTimestamp: TimeInterval { get }
   
+  var isFinished: Bool { get }
+  
   func canRespondOnCharacteristic(characteristicUUID: CBUUID) -> Bool
   func canRespondOnData(data: Data) -> Bool
   
   var responseTimeout: TimeInterval { get }
-  var hasNextIteration: Bool { get }
+  //var hasNextIteration: Bool { get }
   
   func start() throws
   
-  func didUpdateValue(_ data: Data, forCharacteristicUUID uuid: CBUUID, error: Error?)
+  func didUpdateValue(forCharacteristicUUID uuid: CBUUID, error: Error?)
   func didWriteValue(forCharacteristicUUID uuid: CBUUID, error: Error?)
   func didReceiveExternalError(_ error: Error)
   
   func timeout()
+}
+
+
+extension BLEOperation {
+  public var description: String {
+    return "\(name)(\(type(of: self)))"
+  }
 }
 
 
@@ -62,8 +71,9 @@ open class BLEBaseOperation: BLEOperation {
   public var responseTimeout: TimeInterval = 3.0
   public var executionTimestamp: TimeInterval = Date().timeIntervalSinceReferenceDate
   
-  open var hasNextIteration: Bool {
-    return executedOnce == false
+  
+  open var isFinished: Bool {
+    return executedOnce == true || error != nil
   }
   
   
@@ -91,16 +101,12 @@ open class BLEBaseOperation: BLEOperation {
    
   }
   
-  open func didUpdateValue(_ data: Data, forCharacteristicUUID uuid: CBUUID, error: Error?) {
-    
-  }
+  open func didUpdateValue(forCharacteristicUUID uuid: CBUUID, error: Error?) {}
   
-  open func didWriteValue(forCharacteristicUUID uuid: CBUUID, error: Error?) {
-    
-  } 
+  open func didWriteValue(forCharacteristicUUID uuid: CBUUID, error: Error?) {}
   
   open func timeout() {
-    
+    log.debug("Timeout for \(type(of: self))")
   }
   
   open func didReceiveExternalError(_ error: Error) {

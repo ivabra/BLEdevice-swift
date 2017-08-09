@@ -35,7 +35,8 @@ public protocol PeripheralMonitor: class, PeripheralInteractor {
   
   var delegate: PeripheralMonitorDelegate? { get set }
   
-  var isPrepared : Bool { get }
+  var isNeedScanning : Bool { get }
+  var isScanning: Bool { get }
   var peripheral: CBPeripheral { get }
   func dropCache()
   
@@ -59,6 +60,10 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
   
   @discardableResult
   func scan() -> Bool {
+    if (isScanning) {
+      return false
+    }
+    isScanning = true
     return executeNextScanPass()
   }
   
@@ -67,15 +72,18 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
     if scan_discoverService()
       && scan_discoverCharacteristics()
       && scan_subscribeOnCharacteristic() {
+      isScanning = false
       delegate?.peripheralMonitor(self, didEndScanning: nil)
       return false
     }
     return true
   }
   
-  var isPrepared: Bool {
-    return isCharacteristicsSubscribed
+  var isNeedScanning: Bool {
+    return !isCharacteristicsSubscribed
   }
+  
+  var isScanning: Bool = false
   
   private func discoveredServices(for uuids: Set<CBUUID>) throws -> [CBService] {
     
@@ -187,6 +195,12 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
     return ok
   }
   
+  
+  private func stopScanning(with error: Error) {
+    isScanning = false
+    delegate?.peripheralMonitor(self, didEndScanning: error)
+  }
+  
   @discardableResult
   private func scan_discoverService() -> Bool {
     
@@ -269,7 +283,7 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
     
     /* Error case */
     if let error = error {
-      delegate?.peripheralMonitor(self, didEndScanning: error)
+      stopScanning(with: error)
       return
     }
   
@@ -284,7 +298,7 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
     
     /* Error case */
     if let error = error {
-      delegate?.peripheralMonitor(self, didEndScanning: error)
+      stopScanning(with: error)
       return
     }
     
@@ -297,7 +311,7 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
   func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
     
     if let error = error {
-      delegate?.peripheralMonitor(self, didEndScanning: error)
+      stopScanning(with: error)
       return
     }
     
@@ -319,5 +333,6 @@ final class PeripheralMonitorDefaultImpl: NSObject, PeripheralMonitor, CBPeriphe
   func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
     delegate?.peripheralMonitor(self, didWriteValueForCharacteristic: characteristic.uuid, error: error)
   }
+  
   
 }

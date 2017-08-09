@@ -10,41 +10,52 @@ import Foundation
 import CoreBluetooth
 
 open class BLEbaseDevice: BLEdevice {
-  
+
+  // MARK: Class properties
   open class func primaryServiceUUID() -> CBUUID {
     fatalError()
   }
   
-  public weak var delegate: BLEdeviceDelegate?
-  
-  let monitor: PeripheralMonitor
-  var waitCount: Int = 0
-  
-  /* State */
-  
-  public var currentOperation: BLEOperation?
-  
-  public
-  fileprivate(set) var interfaceState: BLEinterfaceState = .initial {
-    didSet {
-      log.debug("\(self) changed interface state to \((self.interfaceState)). Previous state was \((oldValue))")
-    }
-  }
-  
-  public let userInfo: BLEdeviceUserInfo = .init()
-  
-  /* User info */
-  
-  let internalUserInfo: BLEdeviceUserInfo = .init()
-  
+  /// BLE device configurtion
   open class func defaultConfiguration() -> BLEdeviceConfiguration {
     return .empty
   }
-
+  
+  /// Is peripheral valid for this device class
   open class func validatePeripheral(_ peripheral: CBPeripheral) -> Bool {
     fatalError()
   }
   
+  // MARK: Public properties
+  public weak var delegate: BLEdeviceDelegate?
+  public let userInfo: BLEdeviceUserInfo = .init()
+  
+  // MARK: Internal properties
+  let internalUserInfo: BLEdeviceUserInfo = .init()
+  
+  // MARK: Private properties
+  private let monitor: PeripheralMonitor
+  private let queue: DispatchQueue
+  
+  
+  
+  // MARK: State properties
+  
+  public var interfaceState: BLEinterfaceState {
+    if !self.monitor.isNeedScanning {
+      return BLEinterfaceState.ready
+    } else if self.monitor.isScanning {
+      return BLEinterfaceState.preparing
+    } else {
+      return BLEinterfaceState.needPrepare
+    }
+  }
+
+  public var connectionState: CBPeripheralState {
+    return monitor.peripheral.state
+  }
+  
+  // MARK: Device properties
   public func getPeripheral() throws -> CBPeripheral {
     return monitor.peripheral
   }
@@ -57,87 +68,136 @@ open class BLEbaseDevice: BLEdevice {
     return monitor.peripheral.name
   }
   
-  public var connectionState: CBPeripheralState {
-    return monitor.peripheral.state
-  }
-  
-  required convenience public init(peripheral: CBPeripheral) {
+  required convenience public init(peripheral: CBPeripheral, baseQueue: DispatchQueue) {
     let config = type(of: self).defaultConfiguration()
-    self.init(peripheral: peripheral, config: config)
+    self.init(peripheral: peripheral, config: config, baseQueue: baseQueue)
   }
   
-  public init(peripheral: CBPeripheral, config: BLEdeviceConfiguration) {
+  public init(peripheral: CBPeripheral, config: BLEdeviceConfiguration, baseQueue: DispatchQueue) {
     let monitor = PeripheralMonitorCreate(peripheral: peripheral, configuration: config)
     self.monitor = monitor
+    self.queue = DispatchQueue(label: "com.dantelab.bledevice." + peripheral.identifier.uuidString,
+                               qos: DispatchQoS.utility,
+                               attributes: [],
+                               target: baseQueue)
     monitor.delegate = self
   }
 
-  lazy var interfaceQueue : DispatchQueue = { () -> DispatchQueue in
-    let id = ObjectIdentifier(self).hashValue
-    let queue = DispatchQueue(label: "\(type(of:self)).\(id)", qos: .utility, attributes: .concurrent)
-    return queue
-  }()
+ 
   
-  func assertInteractionState() throws {
-    guard isPrepared else {
+  fileprivate func assertInteractionState() throws {
+    guard self.interfaceState == .ready else {
         throw BLEdeviceError.notPrepared
     }
-    
-    guard interfaceState == .free else {
-      throw BLEdeviceError.interfaceStateNotFree
-    }
-    
-    guard currentOperation == nil else {
-      throw BLEdeviceError.currentOperationNotCompleted
+  }
+  
+  // MARK: Operations
+  
+  public private(set) var operationStack: [BLEOperation] = [] {
+    didSet {
+      log.debug(operationStack)
     }
   }
   
-  func trySetCurrentOperation(_ operation: BLEOperation) throws {
-    log.debug("Setting current operation with name \(operation.name) and type \(type(of: operation))")
-    try assertInteractionState()
-    currentOperation = operation
-    log.debug("Operation \(operation) was set as current")
-    setInterfaceStateAndNotifyDelegate(.busy)
+  public var currentOperation: BLEOperation? {
+    didSet {
+      log.debug("new: \(currentOperation?.description ?? "nil"), old: \(oldValue?.description ?? "nil")")
+    }
   }
+  
+  
+  public func executeOperation(_ operation: BLEOperation) {
+    self._executeOperation(operation)
+  }
+  
+  fileprivate func _executeOperation(_ operation: BLEOperation) {
+    log.debug("Executing operation `\(operation.name)` and type \(type(of: operation))")
+    (operation as? BLEBaseOperation)?.interactor = monitor
+    operationStack.append(operation)
+    dispatchOperations()
+  }
+  
+  fileprivate func dispatchOperations() {
+    log.debug("")
+    guard let current = currentOperation else {
+      if !operationStack.isEmpty {
+        currentOperation = operationStack.removeFirst()
+        dispatchOperations()
+      }
+      return
+    }
+    log.debug("Current operation is \(current)")
+    guard !current.isFinished else {
+      currentOperation = nil
+      log.debug("Finishing operation \(current)")
+      didFinishOperation(current)
+      delegate?.bleDevice(self, didFinishOperation: current)
+      return
+    }
+    
+    do {
+      log.debug("will execute operation \(current)")
+      delegate?.bleDevice(self, willExecuteOperation: current) 
+      try current.start()
+      if current.isFinished {
+        dispatchOperations()
+      } else {
+        scheduleOperationTimeout(current)
+      }
+      
+    } catch {
+      log.warning(error)
+      current.didReceiveExternalError(error)
+      dispatchOperations()
+    }
+    
+  }
+  
+  
+  fileprivate func scheduleOperationTimeout(_ operation: BLEOperation){
+    log.debug("Timeout for \(operation) is \(operation.responseTimeout)s.")
+    
+    let tm = operation.executionTimestamp
+    
+    queue.asyncAfter(deadline: .now() + operation.responseTimeout) {[weak self, weak operation] in
+      guard
+        let `self` = self,
+        let operation = operation,
+        operation.executionTimestamp == tm
+        else {
+          return
+      }
+      log.debug("Fired timeout for \(operation)")
+      operation.timeout()
+      self.dispatchOperations()
+    }
+    
+  }
+  
+  fileprivate func findRespondingOperation(onCharacteristicUUID uuid: CBUUID) -> BLEOperation? {
+    log.debug("uuid: \(uuid)")
+    if let op = self.currentOperation, op.canRespondOnCharacteristic(characteristicUUID: uuid) {
+      log.debug("Found \(op) with name \(op.name)")
+      return op
+    }
+    return nil
+  }
+   
   
   final func dispatch(execute: @escaping (BLEbaseDevice)->()) {
-    interfaceQueue.async { [weak self] in
+    queue.async { [weak self] in
       if let `self` = self {
         execute(self)
       }
     }
   }
-  
-  open var isPrepared: Bool {
-    return monitor.isPrepared
-  }
-  
+   
   public func prepare() {
-    log.debug("Begin preparing...")
-    setInterfaceStateAndNotifyDelegate(.preparing)
+    log.debug("")
     monitor.scan()
   }
   
-  func characteristicUUID(for operation: BLEOperation) -> CBUUID {
-    fatalError()
-  }
-  
-  func setInterfaceStateAndNotifyDelegate(_ state: BLEinterfaceState) {
-    log.debug("Setting interface state to \(state.rawValue)")
-    interfaceState = state
-    delegate?.bleDeviceDidChangeInterfaceState(self)
-  }
-  
-  
-  func freeInterfaceStateAndNotifyDelegate() {
-    log.debug("Freing interface state for notification delegate")
-    if interfaceState != .initial {
-      setInterfaceStateAndNotifyDelegate(.free)
-    } else {
-      log.warning("State is initial, can't be as free")
-    }
-  }
-  
+
   public func send(data: Data, forCharacteristicUUID uuid: CBUUID) throws {
     delegate?.bleDevice(self, willSendData: data, toCharacteristic: uuid)
     log.debug("Sending data \(data) to characteristic with UUID \(uuid)...")
@@ -146,7 +206,6 @@ open class BLEbaseDevice: BLEdevice {
     delegate?.bleDevice(self, didSendData: data, toCharacteristic: uuid)
   }
  
-  
   public func readCharateristicValue(forUUID uuid: CBUUID) throws {
     log.debug("reading value of characteristic(\(uuid))")
     try monitor.readValue(forCharacteristicUUID: uuid)
@@ -159,93 +218,16 @@ open class BLEbaseDevice: BLEdevice {
     return data
   }
   
-  public func executeOperation(_ operation: BLEOperation) throws {
-    log.debug("Executing operation with name `\(operation.name)` and type \(type(of: operation))")
-    try trySetCurrentOperation(operation)
-    (operation as? BLEBaseOperation)?.interactor = monitor
-    delegate?.bleDevice(self, willExecuteOperation: operation)
-    executeNextCurrentOperationIteration()
-  }
   
-  fileprivate func executeNextCurrentOperationIteration() {
-    log.debug("Executing operation iteraction")
-    guard let operation = self.currentOperation else {
-      return
-    }
-    log.debug("Current operation is \(operation) with name \(operation.name)")
-    guard operation.hasNextIteration && operation.error == nil else {
-      finishCurrentOperation()
-      return
-    }
-    
-    do {
-      try operation.start()
-      scheduleCurrentOperationTimeout(operation.responseTimeout)
-    } catch {
-      operation.didReceiveExternalError(error)
-      executeNextCurrentOperationIteration()
-    }
-  }
-  
-  public func dropCurrentOperaton() {
-    log.debug("Dropping current operatin...")
-    if let currentOperation = self.currentOperation {
-      log.debug("Current operation exists: \(currentOperation)")
-      currentOperation.didReceiveExternalError(BLEOperationError.interrupted)
-      finishCurrentOperation()
-    }
-  }
-  
-  private func finishCurrentOperation() {
-   log.debug("Finishing current operation...")
-    guard let currentOperation = currentOperation else {
-      log.warning("Current operation not exists")
-      return
-    }
-    self.currentOperation = nil
-    setInterfaceStateAndNotifyDelegate(.free)
-    didFinishOperation(currentOperation)
-    delegate?.bleDevice(self, didFinishOperation: currentOperation)
-  }
-  
-  final func scheduleCurrentOperationTimeout(_ timeout: TimeInterval){
-    weak var current = self.currentOperation
-    log.debug("Scheduling operation timeout with \(timeout)s...")
-    interfaceQueue.asyncAfter(deadline: .now() + timeout) {[weak self] in
-      guard let `self` = self else { return }
-      log.debug("Timout for operation " + self.currentOperation.descriptionOrNil)
-      if let monitoringOpeartion = current,
-            let currentOperation = self.currentOperation,
-            currentOperation === monitoringOpeartion,
-            currentOperation.executionTimestamp == monitoringOpeartion.executionTimestamp {
-        log.debug("Timeout is valid for current operation")
-        currentOperation.timeout()
-        self.executeNextCurrentOperationIteration()
-      } else {
-        log.debug("Timeout is NOT valid for current operation")
-      }
-    }
-  }
-  
-  fileprivate func findRespondingOperation(onCharacteristicUUID uuid: CBUUID) -> BLEOperation? {
-    log.debug("Getting operation that can respond on characteristic (\(uuid))")
-    if let op = self.currentOperation, op.canRespondOnCharacteristic(characteristicUUID: uuid) {
-      log.debug("Found \(op) with name \(op.name)")
-      return op
-    }
-    return nil
-  }
   
   open func didConnect() {
     log.debug("\(self) was connected")
-    setInterfaceStateAndNotifyDelegate(.initial)
     delegate?.bleDeviceDidConnect(self)
   }
   
   
   open func didDisconnect(error: Error?) {
     log.debug { "\(self) was disconnected" + error.flatMap(or: "") { " with error \($0)" } }
-    setInterfaceStateAndNotifyDelegate(.initial)
     delegate?.bleDevice(self, didDisconnect: error)
   }
   
@@ -256,86 +238,54 @@ open class BLEbaseDevice: BLEdevice {
   
   open func didFinishOperation(_ operation: BLEOperation) {}
   
+  public func dropCurrentOperation() {
+    if let c = currentOperation {
+      c.didReceiveExternalError(BLEOperationError.interrupted)
+      dispatchOperations()
+    }
+  }
+  
+  public func dropAllOperations() {
+    operationStack.removeAll()
+    dropCurrentOperation()
+  }
+  
 }
 
 extension BLEbaseDevice : PeripheralMonitorDelegate {
   
   public func peripheralMonitor(_ monitor: PeripheralMonitor, didWriteValueForCharacteristic uuid: CBUUID, error: Error?) {
-    log.debug("Characteristic with UUID \(uuid) was updated" + error.spaceDescription(or: ""))
-    
-    /* Notify */
-    delegate?.bleDevice(self, didUpdateValueForCharacteristic: uuid, error: error)
-    
-    /* Getting data from characteristic */
-    
-    let receivedData = monitor.retrieveCachedData(forCharacteristicUUID: uuid) ?? Data()
-    
-    guard let operation = findRespondingOperation(onCharacteristicUUID: uuid),
-      operation.canRespondOnData(data: receivedData)
-      else {
+    log.debug("Characteristic with UUID \(uuid) was written" + error.spaceDescription(or: ""))
+    delegate?.bleDevice(self, didWriteValueToCharacteristic: uuid, error: error)
+    guard let operation = findRespondingOperation(onCharacteristicUUID: uuid) else {
         return
     }
-    
-    operation.didUpdateValue(receivedData, forCharacteristicUUID: uuid, error: error)
-    executeNextCurrentOperationIteration()
-    
+    operation.didWriteValue(forCharacteristicUUID: uuid, error: error)
+    dispatchOperations()
   }
   
   public func peripheralMonitor(_ monitor: PeripheralMonitor, didUpdateValueForCharacteristic uuid: CBUUID, error: Error?) {
-    log.debug("Characteristic (\(uuid)) was writted" + error.flatMap(or: "") { " \($0)" })
-    delegate?.bleDevice(self, didWriteValueToCharacteristic: uuid, error: error)
-    if let opertation = findRespondingOperation(onCharacteristicUUID: uuid) {
-      opertation.didWriteValue(forCharacteristicUUID: uuid, error: error)
+    log.debug("Characteristic (\(uuid)) was updated" + error.flatMap(or: "") { " \($0)" })
+    delegate?.bleDevice(self, didUpdateValueForCharacteristic: uuid, error: error)
+    guard let operation = findRespondingOperation(onCharacteristicUUID: uuid) else {
+      return
     }
+    operation.didUpdateValue(forCharacteristicUUID: uuid, error: error)
+    dispatchOperations()
   }
-  
   
   public func peripheralMonitor(_ monitor: PeripheralMonitor, didEndScanning error: Error?) {
     log.debug("Finish scanning services and characteristics" + error.spaceDescription(or: ""))
-    if error == nil {
-      self.interfaceState = .free
-    } else {
-      self.interfaceState = .initial
-    }
     delegate?.bleDevice(self, didEndInitializing: error)
   }
   
 }
 
+
+
 extension BLEOperation {
-  public func execute(at device: BLEbaseDevice) throws {
-    try device.executeOperation(self)
-  }
-}
-
-infix operator +?
-func +?<T>(left: String, right: T?) -> String {
-  return left + (right.flatMap {"\($0)"} ?? "")
-}
-
-extension Optional {
-  func flatMap<U>(or: U, transform: (Wrapped) throws -> U? ) rethrows -> U {
-    return try flatMap(transform) ?? or
-  }
-  
-  func description(or descriptionWhenNil: String) -> String {
-    return flatMap { "\($0)" } ?? descriptionWhenNil
-  }
-  
-  func spaceDescription(or descriptionWhenNil: String) -> String {
-    return flatMap { " \($0)" } ?? descriptionWhenNil
-  }
-  
-  func spaceDescriptionOrEmpty() -> String {
-    return spaceDescription(or: "")
-  }
-  
-  var descriptionOrNil: String {
-    return description(or: "nil")
-  }
-  
-  var descriptionOrEmpty: String {
-    return description(or: "")
+  public func execute(at device: BLEbaseDevice) {
+     device.executeOperation(self)
   }
 }
 
